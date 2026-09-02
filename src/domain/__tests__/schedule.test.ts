@@ -6,6 +6,7 @@ import {
   controleerBezetting,
   heeftGeldigeSleutelbezetting,
   maakRooster,
+  wisselOverzicht,
   wisselsTussen,
   type Blok,
   type Rooster,
@@ -390,6 +391,68 @@ describe('wisselinstructies', () => {
       const wissels = wisselsTussen(r.blokken[i - 1], r.blokken[i])
       expect(wissels.length).toBeLessThanOrEqual(8)
     }
+  })
+})
+
+describe('wisseloverzicht', () => {
+  const r = rooster(16)
+
+  it('scheidt echte wissels van speelsters die alleen doorschuiven', () => {
+    for (let i = 1; i < r.blokken.length; i++) {
+      const { erin, eruit, verplaatst } = wisselOverzicht(r.blokken[i - 1], r.blokken[i])
+      const opVeld = (blok: Blok) => new Set(bezetteIds(blok))
+      const vorige = opVeld(r.blokken[i - 1])
+      const nu = opVeld(r.blokken[i])
+
+      // Wie doorschuift stond er al en staat er nog: die mag nooit als wissel
+      // worden geroepen, anders loopt ze het veld af.
+      for (const { id } of verplaatst) {
+        expect(vorige.has(id)).toBe(true)
+        expect(nu.has(id)).toBe(true)
+        expect(eruit).not.toContain(id)
+        expect(erin.map((e) => e.id)).not.toContain(id)
+      }
+      for (const { id } of erin) expect(vorige.has(id)).toBe(false)
+      for (const id of eruit) expect(nu.has(id)).toBe(false)
+      // Even veel eruit als erin, want het veld blijft vol.
+      expect(erin).toHaveLength(eruit.length)
+    }
+  })
+
+  it('koppelt elke invaller aan de speelster die eraf gaat', () => {
+    for (let i = 1; i < r.blokken.length; i++) {
+      const { paren, erin, eruit, verplaatst } = wisselOverzicht(r.blokken[i - 1], r.blokken[i])
+      expect(paren).toHaveLength(erin.length)
+      // Elke wissel is uit te spreken als "X komt erin voor Y".
+      for (const paar of paren) expect(paar.eruit).toBeTruthy()
+      // Niemand wordt twee keer gekoppeld, en wie doorschuift komt er niet in voor.
+      const gekoppeld = paren.map((p) => p.eruit)
+      expect(new Set(gekoppeld).size).toBe(gekoppeld.length)
+      expect([...gekoppeld].sort()).toEqual([...eruit].sort())
+      for (const { id } of verplaatst) expect(gekoppeld).not.toContain(id)
+    }
+  })
+
+  it('koppelt bij voorkeur aan wie diezelfde plek verliet', () => {
+    for (let i = 1; i < r.blokken.length; i++) {
+      const vorige = r.blokken[i - 1]
+      for (const paar of wisselOverzicht(vorige, r.blokken[i]).paren) {
+        const vorigeOpPlek = vorige.opstelling[paar.positie]
+        // Stond er iemand op deze plek die nu naar de bank gaat? Dan hoort zij
+        // bij dit paar, zodat de positie klopt met wat je roept.
+        const gaatNaarBank = vorigeOpPlek && !bezetteIds(r.blokken[i]).includes(vorigeOpPlek)
+        if (gaatNaarBank) expect(paar.eruit).toBe(vorigeOpPlek)
+      }
+    }
+  })
+
+  it('noemt bij het eerste blok iedereen als erin en niemand als eruit', () => {
+    const { paren, erin, eruit, verplaatst } = wisselOverzicht(null, r.blokken[0])
+    expect(erin).toHaveLength(AANTAL_VELDPOSITIES)
+    expect(eruit).toEqual([])
+    expect(verplaatst).toEqual([])
+    // Niemand hoeft eraf, dus geen enkel paar noemt een naam om te vervangen.
+    expect(paren.every((p) => p.eruit === null)).toBe(true)
   })
 })
 

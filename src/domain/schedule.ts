@@ -535,17 +535,65 @@ export function wisselsTussen(vorige: Blok | null, volgende: Blok): Wissel[] {
   return wissels
 }
 
-/** Speelsters die het veld in komen (stonden er niet, staan er nu wel). */
-export function komenErin(vorige: Blok | null, volgende: Blok): string[] {
-  const oud = new Set(Object.values(vorige?.opstelling ?? {}).filter(Boolean) as string[])
-  const nieuw = Object.values(volgende.opstelling).filter(Boolean) as string[]
-  return nieuw.filter((id) => !oud.has(id))
+/** Eén wissel zoals je hem uitspreekt: "jij komt erin voor haar". */
+export interface WisselPaar {
+  erin: string
+  positie: Positie
+  /** Wie er voor haar af gaat; null als het veld nog niet vol stond. */
+  eruit: string | null
 }
 
-/** Speelsters die naar de bank gaan. */
-export function gaanEruit(vorige: Blok | null, volgende: Blok): string[] {
-  if (!vorige) return []
-  const nieuw = new Set(Object.values(volgende.opstelling).filter(Boolean) as string[])
-  const oud = Object.values(vorige.opstelling).filter(Boolean) as string[]
-  return oud.filter((id) => !nieuw.has(id))
+export interface WisselOverzicht {
+  /** Gekoppeld: wie komt erin voor wie. Dit is wat je langs de lijn roept. */
+  paren: WisselPaar[]
+  /** Komt van de bank het veld in. */
+  erin: { id: string; positie: Positie }[]
+  /** Gaat naar de bank. */
+  eruit: string[]
+  /** Blijft in het veld, maar op een andere plek. */
+  verplaatst: { id: string; van: Positie; naar: Positie }[]
+}
+
+/**
+ * De wissel opgedeeld zoals je hem langs de lijn roept. Wie van positie
+ * verandert maar wél blijft staan, is geen wissel: die verschijnt apart, zodat
+ * niemand per ongeluk het veld af loopt.
+ */
+export function wisselOverzicht(vorige: Blok | null, volgende: Blok): WisselOverzicht {
+  const plekVan = (blok: Blok) => {
+    const kaart = new Map<string, Positie>()
+    for (const positie of POSITIE_CODES) {
+      const id = blok.opstelling[positie]
+      if (id) kaart.set(id, positie)
+    }
+    return kaart
+  }
+
+  const oud = vorige ? plekVan(vorige) : new Map<string, Positie>()
+  const nieuw = plekVan(volgende)
+
+  const erin: WisselOverzicht['erin'] = []
+  const verplaatst: WisselOverzicht['verplaatst'] = []
+  for (const [id, positie] of nieuw) {
+    const vorigePositie = oud.get(id)
+    if (vorigePositie === undefined) erin.push({ id, positie })
+    else if (vorigePositie !== positie) verplaatst.push({ id, van: vorigePositie, naar: positie })
+  }
+
+  const eruit = [...oud.keys()].filter((id) => !nieuw.has(id))
+
+  // Koppel elke invaller aan iemand die eraf gaat. Waar het kan aan de
+  // speelster die net díe plek verliet -- dan klopt "jij komt erin voor haar"
+  // ook echt met de positie. De rest wordt daarna op volgorde gekoppeld.
+  const rest = [...eruit]
+  const paren: WisselPaar[] = erin.map(({ id, positie }) => {
+    const vorigeOpPlek = vorige?.opstelling[positie]
+    const index = vorigeOpPlek ? rest.indexOf(vorigeOpPlek) : -1
+    return { erin: id, positie, eruit: index >= 0 ? rest.splice(index, 1)[0] : null }
+  })
+  for (const paar of paren) {
+    if (paar.eruit === null && rest.length > 0) paar.eruit = rest.shift()!
+  }
+
+  return { paren, erin, eruit, verplaatst }
 }

@@ -34,10 +34,10 @@ export interface PositieInfo {
 }
 
 export const POSITIES: readonly PositieInfo[] = [
-  { code: 'LB', naam: 'Linksback',            linie: 'V', sleutel: false, x: 0.16, y: 0.20 },
-  { code: 'LV', naam: 'Laatste vrouw',        linie: 'V', sleutel: true,  x: 0.39, y: 0.13 },
-  { code: 'CV', naam: 'Centrale verdediger',  linie: 'V', sleutel: true,  x: 0.61, y: 0.22 },
-  { code: 'RB', naam: 'Rechtsback',           linie: 'V', sleutel: false, x: 0.84, y: 0.20 },
+  { code: 'LB', naam: 'Linksback',            linie: 'V', sleutel: false, x: 0.12, y: 0.20 },
+  { code: 'LV', naam: 'Laatste vrouw',        linie: 'V', sleutel: true,  x: 0.38, y: 0.12 },
+  { code: 'CV', naam: 'Centrale verdediger',  linie: 'V', sleutel: true,  x: 0.62, y: 0.23 },
+  { code: 'RB', naam: 'Rechtsback',           linie: 'V', sleutel: false, x: 0.88, y: 0.20 },
   { code: 'LM', naam: 'Linksmid',             linie: 'M', sleutel: false, x: 0.18, y: 0.46 },
   { code: 'CM', naam: 'Centrale middenveld',  linie: 'M', sleutel: true,  x: 0.50, y: 0.42 },
   { code: 'RM', naam: 'Rechtsmid',            linie: 'M', sleutel: false, x: 0.82, y: 0.46 },
