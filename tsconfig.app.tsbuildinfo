@@ -1,0 +1,1 @@
+{"root":["./src/domain/assignment.ts","./src/domain/clock.ts","./src/domain/formation.ts","./src/domain/players.ts","./src/domain/schedule.ts","./src/domain/__tests__/schedule.test.ts"],"version":"5.9.3"}
