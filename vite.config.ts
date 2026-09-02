@@ -5,11 +5,15 @@ import { VitePWA } from 'vite-plugin-pwa'
 // Base path targets GitHub Pages at /<repo>/; override with BASE_PATH for other hosts.
 const base = process.env.BASE_PATH ?? '/hockeywisselapp/'
 
+// Voor de gehoste testversie wordt alles in één HTML-bestand gebundeld; daar
+// hoort geen service worker bij.
+const alleenEenBestand = process.env.SINGLE_FILE === '1'
+
 export default defineConfig({
   base,
   plugins: [
     react(),
-    VitePWA({
+    ...(alleenEenBestand ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
@@ -32,7 +36,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       },
-    }),
+    })]),
   ],
   test: {
     environment: 'node',
