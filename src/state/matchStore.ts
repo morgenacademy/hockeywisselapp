@@ -252,6 +252,19 @@ export function useWedstrijd() {
     [bevries, rooster.blokken],
   )
 
+  /** Zet `centraal` aan of uit voor één speelster; blijft bewaard tussen wedstrijden. */
+  const zetCentraal = useCallback((id: string, centraal: boolean) => {
+    zetStand((huidig) => ({
+      ...huidig,
+      selectie: huidig.selectie.map((s) => (s.id === id ? { ...s, centraal } : s)),
+    }))
+  }, [])
+
+  /** Draait alle handmatige aanpassingen aan de selectie terug. */
+  const herstelSelectie = useCallback(() => {
+    zetStand((huidig) => ({ ...huidig, selectie: SELECTIE }))
+  }, [])
+
   const herstart = useCallback(() => {
     zetStand({ ...standaardStand(), selectie: standRef.current.selectie })
   }, [])
@@ -274,6 +287,8 @@ export function useWedstrijd() {
     volgendBlok,
     zetUitgevallen,
     zetOpPositie,
+    zetCentraal,
+    herstelSelectie,
     herstart,
     markeerAlarm,
   }

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Clock } from '../components/Clock'
 import { Field, type VeldSpeler } from '../components/Field'
-import { SubOverlay } from '../components/SubOverlay'
+import { SubOverlay, Wisselketen } from '../components/SubOverlay'
 import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd } from '../domain/clock'
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
-import { wisselOverzicht, type Rooster } from '../domain/schedule'
+import { wisselKetens, wisselOverzicht, type Rooster } from '../domain/schedule'
 import { useAlarm } from '../hooks/useAlarm'
 import { useWakeLock } from '../hooks/useWakeLock'
 
@@ -67,6 +67,11 @@ export function Wedstrijd(props: Props) {
     () => (blok && volgendBlok ? wisselOverzicht(blok, volgendBlok) : null),
     [blok, volgendBlok],
   )
+  const komendeKetens = useMemo(
+    () => (blok && volgendBlok ? wisselKetens(blok, volgendBlok) : []),
+    [blok, volgendBlok],
+  )
+  const ketens = useMemo(() => (blok ? wisselKetens(vorigBlok, blok) : []), [vorigBlok, blok])
 
   // Het alarm hoort bij de overgang naar een nieuw blok. `alarmTot` onthoudt
   // welk blok al is aangekondigd, zodat een refresh niet opnieuw belt.
@@ -108,7 +113,6 @@ export function Wedstrijd(props: Props) {
   }, [blok, vorigBlok, komende, perId, aanwezigen])
 
   const bank = blok?.bank ?? []
-  const overzicht = blok ? wisselOverzicht(vorigBlok, blok) : null
   const blokWaarschuwingen = blok?.waarschuwingen ?? []
 
   const zetSpeelster = (id: string) => {
@@ -180,23 +184,12 @@ export function Wedstrijd(props: Props) {
         </div>
       )}
 
-      {komende && komende.paren.length > 0 && (
+      {komendeKetens.length > 0 && (
         <section className="vooruitblik">
           <h2>Volgende wissel</h2>
-          <ul>
-            {komende.paren.map((paar) => (
-              <li key={paar.erin}>
-                <strong className="erin">{naam(paar.erin)}</strong>
-                {paar.eruit ? (
-                  <>
-                    <span className="voor">erin voor</span>
-                    <strong className="eruit">{naam(paar.eruit)}</strong>
-                  </>
-                ) : (
-                  <span className="voor">komt erin</span>
-                )}
-                <span className="plek">{positieInfo(paar.positie).naam}</span>
-              </li>
+          <ul className="ketens">
+            {komendeKetens.map((keten) => (
+              <Wisselketen key={keten.eruit} keten={keten} naam={naam} />
             ))}
           </ul>
         </section>
@@ -270,10 +263,10 @@ export function Wedstrijd(props: Props) {
         <button className="knop klein gevaar" onClick={props.onOpnieuw}>Opnieuw</button>
       </div>
 
-      {overlayZichtbaar && overzicht && (
+      {overlayZichtbaar && blok && (
         <SubOverlay
           blokNummer={huidigBlok + 1}
-          overzicht={overzicht}
+          ketens={ketens}
           naam={naam}
           onKlaar={() => zetOverlayZichtbaar(false)}
         />

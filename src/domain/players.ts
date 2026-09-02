@@ -1,5 +1,5 @@
 import type { Linie, Positie } from './formation'
-import { positieInfo } from './formation'
+import { POSITIES, positieInfo } from './formation'
 
 export interface Speelster {
   id: string
@@ -60,6 +60,24 @@ export function magOpPositie(speelster: Speelster, positie: Positie): boolean {
   const info = positieInfo(positie)
   if (!info.sleutel) return true
   return speelster.centraal && speelster.linies.includes(info.linie)
+}
+
+/**
+ * Welke sleutelposities kan deze speelster bezetten als `centraal` aan staat?
+ *
+ * Omdat `centraal` binnen haar eigen linies werkt, levert de vlag niet voor
+ * iedereen hetzelfde op: een verdedigster krijgt laatste vrouw en centrale
+ * verdediger erbij, een middenvelder de centrale middenveld, en een speelster
+ * die alleen aanval speelt helemaal niets -- de voorhoede kent geen
+ * sleutelpositie.
+ */
+export function sleutelPositiesVoor(speelster: Speelster): Positie[] {
+  return POSITIES.filter((p) => p.sleutel && speelster.linies.includes(p.linie)).map((p) => p.code)
+}
+
+/** Heeft het zin om `centraal` bij deze speelster aan te zetten? */
+export function centraalHeeftZin(speelster: Speelster): boolean {
+  return sleutelPositiesVoor(speelster).length > 0
 }
 
 /** Speelsters die een sleutelpositie in deze linie kunnen bezetten. */

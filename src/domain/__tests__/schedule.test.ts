@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { AANTAL_BLOKKEN, BLOK_SECONDEN, WEDSTRIJD_SECONDEN } from '../clock'
 import { AANTAL_VELDPOSITIES, POSITIE_CODES, positieInfo, type Positie } from '../formation'
-import { SELECTIE, magOpPositie, type Speelster } from '../players'
+import {
+  SELECTIE,
+  centraalHeeftZin,
+  inLinie,
+  magOpPositie,
+  sleutelPositiesVoor,
+  type Speelster,
+} from '../players'
 import {
   controleerBezetting,
   heeftGeldigeSleutelbezetting,
   maakRooster,
+  wisselKetens,
   wisselOverzicht,
   wisselsTussen,
   type Blok,
@@ -238,12 +246,17 @@ describe('rouleren van de centrale posities', () => {
       sterkteMidden: [...midden].reverse(),
     })
 
-    // Lynn staat normaal onderaan de verdedigingslijst en bovenaan als je hem
-    // omdraait; bij Eva Hoevers is het precies andersom.
-    const lynn = 'p15'
-    const eva = 'p03'
-    expect(centraalBlokken(omgekeerd, lynn)).toBeGreaterThan(centraalBlokken(normaal, lynn))
-    expect(centraalBlokken(normaal, eva)).toBeGreaterThan(centraalBlokken(omgekeerd, eva))
+    // Wie bovenaan de lijst staat, staat vaker centraal dan wanneer diezelfde
+    // speelster onderaan staat -- in beide richtingen te zien aan de twee
+    // uitersten van de verdedigingslijst.
+    const bovenaan = achter[0]
+    const onderaan = achter[achter.length - 1]
+    expect(centraalBlokken(normaal, bovenaan)).toBeGreaterThan(centraalBlokken(omgekeerd, bovenaan))
+    expect(centraalBlokken(omgekeerd, onderaan)).toBeGreaterThan(centraalBlokken(normaal, onderaan))
+
+    // Het effect is begrensd: continuïteit houdt speelsters op hun plek, dus de
+    // volgorde stuurt vooral wie er centraal ínvalt, niet wie er blijft staan.
+    // Speelsters die door de bezetting sowieso centraal moeten, verschuiven niet.
   })
 
   it('geeft niemand meer centrale blokken dan ze speelt', () => {
@@ -355,6 +368,72 @@ describe('onvulbare bezetting', () => {
   })
 })
 
+describe('centraal vooraf aanzetten', () => {
+  it('weet per speelster welke sleutelposities de vlag ontgrendelt', () => {
+    expect(sleutelPositiesVoor(speelster('p05'))).toEqual(['LV', 'CV']) // Kate: alleen verdediging
+    expect(sleutelPositiesVoor(speelster('p04'))).toEqual(['CM']) // Liv: middenveld en aanval
+    expect(sleutelPositiesVoor(speelster('p09'))).toEqual(['LV', 'CV', 'CM']) // Saffiya: beide linies
+    expect(sleutelPositiesVoor(speelster('p07'))).toEqual([]) // Cato: alleen aanval
+  })
+
+  it('biedt de knop niet aan waar hij niets zou doen', () => {
+    expect(centraalHeeftZin(speelster('p07'))).toBe(false)
+    expect(centraalHeeftZin(speelster('p05'))).toBe(true)
+  })
+
+  it('laat Kate Janssen centraal spelen zodra je het aanzet', () => {
+    const metKate = SELECTIE.map((s) => (s.id === 'p05' ? { ...s, centraal: true } : s))
+    const kate = metKate.find((s) => s.id === 'p05')!
+    expect(magOpPositie(kate, 'LV')).toBe(true)
+    expect(magOpPositie(kate, 'CV')).toBe(true)
+    expect(magOpPositie(kate, 'CM')).toBe(false) // ze speelt geen middenveld
+
+    const r = maakRooster({
+      aanwezigen: metKate,
+      keeperId: 'p16',
+      sterkteAchter: ['p05'], // bovenaan zetten, dan zie je het effect meteen
+      sterkteMidden: metKate.filter((s) => magOpPositie(s, 'CM')).map((s) => s.id),
+    })
+    const centraleBlokken = r.blokken.filter((b) =>
+      (['LV', 'CV'] as Positie[]).some((p) => b.opstelling[p] === 'p05'),
+    )
+    expect(centraleBlokken.length).toBeGreaterThan(0)
+  })
+
+  it('redt een bezetting die zonder de knop niet rond komt', () => {
+    // Elf aanwezigen met te weinig centrale speelsters: dit is precies de
+    // situatie waarvoor de knop bestaat.
+    const dun = ['p05', 'p04', 'p07', 'p08', 'p09', 'p11', 'p12', 'p13', 'p14', 'p16', 'p03'].map(speelster)
+    expect(controleerBezetting(dun, 'p03').ok).toBe(false)
+
+    // Kate en Eva van der Zee erbij voor achterin, Suus voor het middenveld.
+    const versterkt = dun.map((s) =>
+      ['p05', 'p16', 'p08'].includes(s.id) ? { ...s, centraal: true } : s,
+    )
+    const check = controleerBezetting(versterkt, 'p03')
+    expect(check.ok, check.meldingen.join(' / ')).toBe(true)
+
+    const r = maakRooster({ aanwezigen: versterkt, keeperId: 'p03' })
+    expect(r.waarschuwingen.filter((w) => w.includes('Noodbezetting'))).toEqual([])
+    for (const blok of r.blokken) {
+      for (const positie of ['LV', 'CV', 'CM'] as Positie[]) {
+        const id = blok.opstelling[positie]
+        expect(id).toBeTruthy()
+        expect(magOpPositie(versterkt.find((s) => s.id === id)!, positie)).toBe(true)
+      }
+    }
+  })
+
+  it('houdt Cato buiten de sleutelposities, ook met de vlag aan', () => {
+    const r = maakRooster({ aanwezigen: SELECTIE, keeperId: 'p16' })
+    for (const blok of r.blokken) {
+      for (const positie of ['LV', 'CV', 'CM'] as Positie[]) {
+        expect(blok.opstelling[positie]).not.toBe('p07')
+      }
+    }
+  })
+})
+
 describe('handmatig vastzetten', () => {
   it('respecteert een vastgezette positie', () => {
     const aanwezigen = SELECTIE
@@ -453,6 +532,178 @@ describe('wisseloverzicht', () => {
     expect(verplaatst).toEqual([])
     // Niemand hoeft eraf, dus geen enkel paar noemt een naam om te vervangen.
     expect(paren.every((p) => p.eruit === null)).toBe(true)
+  })
+})
+
+describe('schuiven is het laatste redmiddel', () => {
+  const alleMaten = [11, 12, 13, 14, 15, 16]
+
+  it('schuift hoogstens één speelster per blok, en meldt het als er meer nodig zijn', () => {
+    for (const aantal of alleMaten) {
+      const r = rooster(aantal)
+      for (let i = 1; i < r.blokken.length; i++) {
+        const { verplaatst } = wisselOverzicht(r.blokken[i - 1], r.blokken[i])
+        if (verplaatst.length <= 1) continue
+        // Meer dan één schuif mag alleen als het niet anders kon, en dan moet
+        // de leider het te zien krijgen in plaats van het zelf te ontdekken.
+        expect(
+          r.blokken[i].waarschuwingen.some((w) => w.includes('schuiven tegelijk door')),
+          `${aantal} aanwezig, blok ${i + 1}: ${verplaatst.length} schuiven zonder melding`,
+        ).toBe(true)
+      }
+    }
+  })
+
+  it('schuift nooit zonder reden', () => {
+    // Een schuif is zinloos als je hem meteen kunt terugdraaien: zet de
+    // doorgeschoven speelster terug op haar oude plek en de invaller die daar
+    // nu staat op de nieuwe. Mag dat allebei, dan had de schuif niet gehoeven.
+    for (const aantal of alleMaten) {
+      const r = rooster(aantal)
+      for (let i = 1; i < r.blokken.length; i++) {
+        const nu = r.blokken[i]
+        for (const { id, van, naar } of wisselOverzicht(r.blokken[i - 1], nu).verplaatst) {
+          const opOudePlek = nu.opstelling[van]
+          if (!opOudePlek) continue
+          const vervanger = speelster(opOudePlek)
+          const zinloos =
+            magOpPositie(speelster(id), van) &&
+            inLinie(speelster(id), van) &&
+            magOpPositie(vervanger, naar) &&
+            inLinie(vervanger, naar)
+          expect(
+            zinloos,
+            `${aantal} aanwezig, blok ${i + 1}: ${speelster(id).naam} schuift ${van}→${naar} ` +
+              `terwijl ze gewoon had kunnen blijven staan`,
+          ).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('houdt het totale aantal schuiven laag over een hele wedstrijd', () => {
+    for (const aantal of alleMaten) {
+      const r = rooster(aantal)
+      let schuiven = 0
+      for (let i = 1; i < r.blokken.length; i++) {
+        schuiven += wisselOverzicht(r.blokken[i - 1], r.blokken[i]).verplaatst.length
+      }
+      // Ruim onder de 8 die het zonder deze regels werden; laat ruimte voor de
+      // krappe bezettingen waar het echt niet anders kan.
+      expect(schuiven, `${aantal} aanwezig`).toBeLessThanOrEqual(7)
+    }
+  })
+
+  it('laat een speelster op haar plek staan zolang ze in het veld blijft', () => {
+    // Bij volle bezetting hoort doorschuiven zeldzaam te zijn.
+    const r = rooster(16)
+    let schuiven = 0
+    for (let i = 1; i < r.blokken.length; i++) {
+      schuiven += wisselOverzicht(r.blokken[i - 1], r.blokken[i]).verplaatst.length
+    }
+    expect(schuiven).toBeLessThanOrEqual(4)
+  })
+
+  it('houdt het schuiven laag over élke bezetting en élke keeperkeuze', () => {
+    // Eén vaste keeper testen verbergt de lastige gevallen: het hangt sterk af
+    // van wie er keept hoeveel ruimte het rooster overhoudt. Daarom alle 81
+    // combinaties, met de cijfers van vóór deze regels als ijkpunt (605
+    // schuiven, 151 blokken met meer dan één, ergste blok 4).
+    let schuiven = 0
+    let blokkenMetMeerdere = 0
+    let ergsteBlok = 0
+    let ongemeld = 0
+
+    for (const aantal of alleMaten) {
+      const aanwezigen = SELECTIE.slice(0, aantal)
+      for (const keeper of aanwezigen) {
+        const r = maakRooster({
+          aanwezigen,
+          keeperId: keeper.id,
+          sterkteAchter: sterkteAchter.filter(
+            (id) => id !== keeper.id && aanwezigen.some((a) => a.id === id),
+          ),
+          sterkteMidden: sterkteMidden.filter(
+            (id) => id !== keeper.id && aanwezigen.some((a) => a.id === id),
+          ),
+        })
+        for (let i = 1; i < r.blokken.length; i++) {
+          const aantalSchuiven = wisselOverzicht(r.blokken[i - 1], r.blokken[i]).verplaatst.length
+          schuiven += aantalSchuiven
+          if (aantalSchuiven < 2) continue
+          blokkenMetMeerdere++
+          ergsteBlok = Math.max(ergsteBlok, aantalSchuiven)
+          // Meer dan één schuif mag alleen als de leider het te zien krijgt.
+          if (!r.blokken[i].waarschuwingen.some((w) => w.includes('schuiven tegelijk door'))) {
+            ongemeld++
+          }
+        }
+      }
+    }
+
+    expect(ongemeld, 'blokken met meerdere schuiven zonder melding').toBe(0)
+    expect(schuiven).toBeLessThanOrEqual(200)
+    expect(blokkenMetMeerdere).toBeLessThanOrEqual(40)
+    expect(ergsteBlok).toBeLessThanOrEqual(3)
+  })
+})
+
+describe('wisselketens', () => {
+  it('vertelt elke wissel als een sluitende ketting', () => {
+    for (const aantal of [12, 13, 14, 15, 16]) {
+      const r = rooster(aantal)
+      for (let i = 1; i < r.blokken.length; i++) {
+        const vorige = r.blokken[i - 1]
+        const nu = r.blokken[i]
+        const ketens = wisselKetens(vorige, nu)
+        const { eruit } = wisselOverzicht(vorige, nu)
+
+        // Elke speelster die eraf gaat krijgt precies één ketting.
+        expect(ketens.map((k) => k.eruit).sort()).toEqual([...eruit].sort())
+
+        for (const keten of ketens) {
+          expect(keten.stappen.length).toBeGreaterThan(0)
+          // De eerste stap vult de plek die vrijkwam.
+          expect(keten.stappen[0].naar).toBe(keten.vanPositie)
+          // Elke volgende stap vult de plek die de vorige achterliet.
+          for (let stap = 1; stap < keten.stappen.length; stap++) {
+            expect(keten.stappen[stap].naar).toBe(keten.stappen[stap - 1].van)
+          }
+          // De ketting eindigt bij iemand van de bank.
+          expect(keten.stappen[keten.stappen.length - 1].van).toBeNull()
+          // En klopt met het veld: iedereen staat waar de ketting zegt.
+          for (const stap of keten.stappen) {
+            expect(nu.opstelling[stap.naar]).toBe(stap.speelsterId)
+            if (stap.van) expect(vorige.opstelling[stap.van]).toBe(stap.speelsterId)
+          }
+        }
+
+        // Niemand komt in twee kettingen voor.
+        const alle = ketens.flatMap((k) => k.stappen.map((s) => s.speelsterId))
+        expect(new Set(alle).size).toBe(alle.length)
+      }
+    }
+  })
+
+  it('geeft een gewone wissel één stap en een schuif er twee', () => {
+    const r = rooster(13)
+    let metSchuif = 0
+    for (let i = 1; i < r.blokken.length; i++) {
+      for (const keten of wisselKetens(r.blokken[i - 1], r.blokken[i])) {
+        if (keten.stappen.length === 1) {
+          expect(keten.stappen[0].van).toBeNull()
+        } else {
+          metSchuif++
+          // De tussenstappen zijn speelsters die in het veld blijven.
+          for (const stap of keten.stappen.slice(0, -1)) expect(stap.van).not.toBeNull()
+        }
+      }
+    }
+    expect(metSchuif).toBeGreaterThan(0)
+  })
+
+  it('geeft geen ketens voor het eerste blok', () => {
+    expect(wisselKetens(null, rooster(16).blokken[0])).toEqual([])
   })
 })
 

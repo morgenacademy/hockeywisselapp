@@ -48,6 +48,15 @@ Lily, Nora en Lynn zitten in beide pools en zijn daarmee de scharnierpunten van
 het rooster. Cato kan wel centraal, maar speelt alleen aanval — en de voorhoede
 kent geen sleutelpositie, dus zij staat op LA, SP of RA.
 
+Die pools zijn krap, dus je kunt ze zelf aanvullen: op het aanwezigheidsscherm
+staat achter elke naam een knop **centraal**. Zet je die aan bij Kate Janssen,
+dan kan zij er ook op laatste vrouw en centrale verdediger staan. Wat het per
+speelster oplevert hangt af van haar linies — bij Cato is de knop uitgeschakeld,
+want in de aanval zit geen centrale sleutelpositie. Een teller boven de lijst laat
+live zien hoeveel speelsters er achterin en op het middenveld centraal kunnen, en
+waarschuwt als dat er te weinig zijn. De wijziging blijft bewaard voor volgende
+wedstrijden; er is een knop om terug te zetten naar de oorspronkelijke selectie.
+
 ## Hoe het rooster tot stand komt
 
 Twee stappen per blok, in deze volgorde:
@@ -67,12 +76,27 @@ linie, je plek in de sterkte-volgorde, en spreiding over posities.
 Komt de speeltijd in de knel met de linies, dan wint de speeltijd en staat er
 iemand buiten haar linie — met een oranje rand op het veld, zodat je het ziet.
 
+### Doorschuiven is het laatste redmiddel
+
+Een speelster die in het veld blijft maar naar een andere plek gaat, is de duurste
+instructie langs de lijn: je moet drie mensen tegelijk iets vertellen. Daarom is
+dat geen kwestie van weging maar van stappen. Eerst probeert de app het blok rond
+te zetten met iedereen op haar eigen plek; lukt dat niet, dan met precies één
+speelster die doorschuift; en pas als dat ook niet kan met meer — en dan krijg je
+het te zien. Ook de rustrotatie kijkt vooruit: bij speelsters met dezelfde
+speeltijd kiest de app degene wier vervanger direct op haar plek kan.
+
+Over alle bezettingen en keeperkeuzes samen scheelt dat 605 → 140 schuiven, en
+zakt het aantal wisselmomenten met meer dan één schuif van 151 naar 25. De
+speeltijd blijft daarbij overal binnen één blok.
+
 ## Gebruiken
 
 Op je telefoon: open de app, en voeg hem toe aan je beginscherm. Daarna werkt hij
 ook zonder bereik langs het veld.
 
-1. **Aanwezigheid** — vink aan wie er is (11 t/m 16).
+1. **Aanwezigheid** — vink aan wie er is (11 t/m 16), en zet zo nodig bij iemand
+   **centraal** aan.
 2. **Keeper** — zij speelt de hele wedstrijd. De app waarschuwt als je keuze de
    centrale posities onvulbaar maakt.
 3. **Centrale posities** — zet de speelsters op sterkte. Bovenaan staat het
@@ -83,6 +107,17 @@ ook zonder bereik langs het veld.
 
 Bij het wisselmoment gaat er een belletje af (plus trillen) en verschijnt de
 wissel in de vorm waarin je hem roept: *"Nora, jij komt erin voor Eva Hoevers."*
+
+Moet er toch iemand doorschuiven, dan staat de hele ketting op één kaart, zodat
+niemand per ongeluk het veld af loopt:
+
+```
+ERUIT      Kiki van der Feer     stond op Centrale middenveld
+   ↓
+SCHUIFT    Lily le Blanc         van Rechtsmid naar Centrale middenveld
+   ↓
+ERIN       Suus Kimenai          op Rechtsmid
+```
 
 Tijdens de wedstrijd kun je altijd ingrijpen: tik op een speelster op het veld om
 haar te vervangen, of zet iemand op **eruit** bij een blessure of kaart. De app
@@ -101,7 +136,8 @@ De logica zit in `src/domain/` en is los te testen zonder browser:
 
 - `formation.ts` — de 4-3-3 posities en welke sleutelposities zijn
 - `players.ts` — de selectie en wie waar mag staan
-- `schedule.ts` — het rooster: rustrotatie, positieverdeling, herberekening
+- `schedule.ts` — het rooster: rustrotatie, positieverdeling, reparatiestappen,
+  wisselkettingen en herberekening
 - `assignment.ts` — koppeling (Kuhn) en toewijzing (Hongaars)
 - `clock.ts` — kwarten, blokken en tijd
 
@@ -115,3 +151,6 @@ De vaste selectie staat in `src/domain/players.ts`. Elke speelster heeft haar
 voorkeurslinies (`V`, `M`, `A`) en of ze centraal kan. Let op: `centraal` geldt
 binnen haar eigen linies — een aanvalster met `centraal` komt daardoor niet op
 CM terecht.
+
+De centraal-vlag kun je ook in de app zelf aanzetten; die wijziging wordt lokaal
+bewaard. Alleen voor het aanpassen van linies moet je dit bestand in.

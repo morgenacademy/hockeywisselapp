@@ -44,6 +44,8 @@ export default function App() {
           })
         }
         onAlle={(aan) => wijzig({ aanwezig: aan ? stand.selectie.map((s) => s.id) : [], keeperId: null })}
+        onCentraal={w.zetCentraal}
+        onHerstelSelectie={w.herstelSelectie}
         onVerder={() => wijzig({ fase: 'keeper' })}
       />
     )

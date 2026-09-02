@@ -84,23 +84,28 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .rij {
   width: 100%;
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 24px 1fr;
   align-items: center;
-  gap: 10px;
+  gap: 2px 8px;
   text-align: left;
   font: inherit;
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--rand);
   background: var(--paneel);
   color: var(--tekst);
   cursor: pointer;
 }
+/* Naam en linie onder elkaar in de rechterkolom: dan houdt de naam de volle
+   breedte en breekt hij niet over drie regels. Alleen binnen `.rij`, zodat de
+   speeltijdlijst zijn eigen kolomindeling houdt. */
+.rij .rij-naam { grid-column: 2; }
+.rij .rij-info { grid-column: 2; text-align: left; }
 .rij.aan { background: var(--paneel-licht); border-color: var(--gras); }
 .rij.uit { opacity: 0.55; }
 .vink { color: var(--erin); font-weight: 700; text-align: center; }
 .rij-naam { font-weight: 600; }
-.rij-info { color: var(--tekst-zacht); font-size: 0.8rem; text-align: right; }
+.rij-info { color: var(--tekst-zacht); font-size: 0.78rem; }
 .rij-info em { color: var(--accent); font-style: normal; }
 .rij-info.let-op { color: var(--waarschuwing); }
 
@@ -183,6 +188,27 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .veld-speler.gewisseld circle { stroke: var(--erin); stroke-width: 0.9; }
 .veld-speler.markering-buitenLinie circle { stroke: var(--waarschuwing); stroke-width: 0.9; }
 .veld-speler.markering-nood circle { stroke: var(--eruit); stroke-width: 1.2; stroke-dasharray: 1.5 1; }
+
+/* --- wie er straks af moet, zichtbaar op het veld --- */
+.veld-speler .halo {
+  fill: none;
+  stroke: var(--eruit);
+  stroke-width: 0.7;
+  opacity: 0.9;
+}
+.veld-speler.gaat-eruit circle:not(.halo) { stroke: var(--eruit); stroke-width: 0.9; }
+.veld-vlag text {
+  text-anchor: middle;
+  font-size: 2.1px;
+  font-weight: 800;
+  letter-spacing: 0.15px;
+  stroke: none;
+}
+.veld-vlag rect { stroke: rgba(0, 0, 0, 0.5); stroke-width: 0.2; }
+.eruit-vlag rect { fill: #b3271e; }
+.eruit-vlag text { fill: #fff; }
+.schuif-vlag rect { fill: #8a6a10; }
+.schuif-vlag text { fill: #fff6d6; }
 
 /* --- chips --- */
 .chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
@@ -300,92 +326,114 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .rooster .totaal { font-variant-numeric: tabular-nums; font-weight: 700; }
 .keeperrij { color: #d8b4fe; }
 
-/* --- wisselgroepen --- */
-.wisselgroep { display: flex; flex-direction: column; gap: 6px; }
-.wisselgroep h3 {
-  margin: 0;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--tekst-zacht);
-}
-.wisselgroep h3 em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: 0.8; }
-.wisselgroep ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.wisselgroep li {
-  padding: 10px 12px;
+/* --- wisselketens --- */
+.ketens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.keten {
   background: var(--paneel-licht);
   border-radius: var(--radius);
-  border-left: 4px solid var(--rand);
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-.eruit-groep li { border-left-color: var(--eruit); color: var(--eruit); }
-.erin-groep li { border-left-color: var(--erin); color: var(--erin); }
-.schuif-groep li { border-left-color: var(--accent); color: var(--accent); }
-.plek {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--tekst-zacht);
-  letter-spacing: 0.02em;
-}
-
-/* --- wie gaat eruit: op het veld en in de vooruitblik --- */
-.veld-speler .halo {
-  fill: none;
-  stroke: var(--eruit);
-  stroke-width: 0.7;
-  opacity: 0.9;
-}
-.veld-speler.gaat-eruit circle:not(.halo) { stroke: var(--eruit); stroke-width: 0.9; }
-.veld-vlag text {
-  text-anchor: middle;
-  font-size: 2.1px;
-  font-weight: 800;
-  letter-spacing: 0.15px;
-  stroke: none;
-}
-.veld-vlag rect { stroke: rgba(0, 0, 0, 0.5); stroke-width: 0.2; }
-.eruit-vlag rect { fill: #b3271e; }
-.eruit-vlag text { fill: #fff; }
-.schuif-vlag rect { fill: #8a6a10; }
-.schuif-vlag text { fill: #fff6d6; }
-
-.vooruitblik {
-  background: var(--paneel);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius);
   padding: 12px;
-}
-.vooruitblik ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.vooruitblik li {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 0.95rem;
-}
-.vooruitblik .plek {
-  display: inline;
-  width: 100%;
-  font-size: 0.75rem;
-  color: var(--tekst-zacht);
-}
-.voor { color: var(--tekst-zacht); font-weight: 400; font-size: 0.85rem; }
-
-.wisselparen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.wisselparen li {
-  padding: 12px;
-  background: var(--paneel-licht);
-  border-radius: var(--radius);
   border-left: 4px solid var(--erin);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
+.keten.meervoudig { border-left-color: var(--accent); }
+
 .paar-regel {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 6px;
   font-size: 1.1rem;
+  font-weight: 700;
 }
 .paar-regel .erin { color: var(--erin); }
 .paar-regel .eruit { color: var(--eruit); }
+.voor { color: var(--tekst-zacht); font-weight: 400; font-size: 0.85rem; }
+
+/* Elke stap is een regel; de verbindende pijl maakt de volgorde zichtbaar. */
+.keten .stap {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 4px 10px;
+  align-items: baseline;
+  position: relative;
+}
+.keten .stap + .stap { padding-top: 12px; }
+.keten .stap + .stap::before {
+  content: '↓';
+  position: absolute;
+  left: 24px;
+  top: -2px;
+  font-size: 0.8rem;
+  color: var(--tekst-zacht);
+}
+.rol {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 0;
+}
+.rol.eruit { color: var(--eruit); }
+.rol.erin { color: var(--erin); }
+.rol.schuift { color: var(--accent); }
+.wie { font-size: 1.05rem; font-weight: 700; }
+.wie.eruit { color: var(--eruit); }
+.wie.erin { color: var(--erin); }
+.wie.schuift { color: var(--accent); }
+.keten .plek {
+  grid-column: 2;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--tekst-zacht);
+}
+.keten.enkel .plek { grid-column: auto; }
+
+.vooruitblik {
+  background: var(--paneel);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.vooruitblik .keten { background: var(--paneel-licht); }
+
+/* --- aanwezigheid: afvinken en centraal staan los van elkaar --- */
+.rij-groep { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; }
+.rij-groep .rij { border-radius: var(--radius) 0 0 var(--radius); }
+.centraal-knop {
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  width: 80px;
+  padding: 8px 4px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  border: 1px solid var(--rand);
+  background: var(--paneel);
+  color: var(--tekst-zacht);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.centraal-knop.aan {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1b1403;
+}
+.centraal-knop:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+.centraal-tel { margin: 6px 0 0; font-size: 0.85rem; color: var(--tekst-zacht); }
+.centraal-tel strong { color: var(--tekst); font-weight: 700; }
+.centraal-tel.krap { color: #d8b45f; }
+.centraal-tel.krap strong { color: #d8b45f; }
+.centraal-tel.tekort { color: var(--waarschuwing); font-weight: 600; }
+.centraal-tel.tekort strong { color: var(--waarschuwing); }
+.centraal-tel em { font-style: normal; }
