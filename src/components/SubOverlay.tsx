@@ -3,6 +3,9 @@ import type { WisselKeten } from '../domain/schedule'
 
 interface Props {
   blokNummer: number
+  kwart: number
+  /** Valt dit wisselmoment op een kwartgrens? Dan is het een rustwissel. */
+  rustwissel: boolean
   ketens: WisselKeten[]
   naam: (id: string) => string
   onKlaar: () => void
@@ -54,11 +57,20 @@ export function Wisselketen({ keten, naam }: { keten: WisselKeten; naam: (id: st
   )
 }
 
-export function SubOverlay({ blokNummer, ketens, naam, onKlaar }: Props) {
+export function SubOverlay({ blokNummer, kwart, rustwissel, ketens, naam, onKlaar }: Props) {
   return (
-    <div className="overlay" role="dialog" aria-label="Wisselmoment">
-      <div className="overlay-kaart">
-        <h2>Wisselen — blok {blokNummer}</h2>
+    <div className="overlay" role="dialog" aria-label={rustwissel ? 'Rustwissel' : 'Wisselmoment'}>
+      <div className={`overlay-kaart ${rustwissel ? 'rustwissel' : ''}`}>
+        {rustwissel ? (
+          <header className="rustkop">
+            <h2>Rustwissel</h2>
+            <p className="tel">
+              Kwart {kwart} begint zo. De klok staat stil, dus je hebt de tijd.
+            </p>
+          </header>
+        ) : (
+          <h2>Wisselen — blok {blokNummer}</h2>
+        )}
 
         {ketens.length === 0 ? (
           <p className="tel">Geen wissels: iedereen blijft staan.</p>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Aanwezigheid } from './screens/Aanwezigheid'
 import { KeeperKiezen } from './screens/KeeperKiezen'
+import { Opstelling } from './screens/Opstelling'
 import { Overzicht } from './screens/Overzicht'
 import { Sterkte } from './screens/Sterkte'
 import { Wedstrijd } from './screens/Wedstrijd'
@@ -72,6 +73,21 @@ export default function App() {
         midden={stand.sterkteMidden}
         onZet={(achter, midden) => wijzig({ sterkteAchter: achter, sterkteMidden: midden })}
         onTerug={() => wijzig({ fase: 'keeper' })}
+        onVerder={() => wijzig({ fase: 'opstelling' })}
+      />
+    )
+  }
+
+  if (stand.fase === 'opstelling') {
+    return (
+      <Opstelling
+        aanwezigen={aanwezigen}
+        keeperId={stand.keeperId}
+        voorstel={w.rooster.blokken[0]?.opstelling ?? {}}
+        vastgezet={stand.vastgezet[0] ?? {}}
+        onZet={(positie, id) => w.zetOpPositie(0, positie, id)}
+        onWis={() => wijzig({ vastgezet: { ...stand.vastgezet, 0: {} } })}
+        onTerug={() => wijzig({ fase: 'sterkte' })}
         onVerder={() => wijzig({ fase: 'wedstrijd' })}
       />
     )

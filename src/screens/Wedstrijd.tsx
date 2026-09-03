@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Clock } from '../components/Clock'
 import { Field, type VeldSpeler } from '../components/Field'
 import { SubOverlay, Wisselketen } from '../components/SubOverlay'
-import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd } from '../domain/clock'
+import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd, kwartVanBlok } from '../domain/clock'
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
 import { wisselKetens, wisselOverzicht, type Rooster } from '../domain/schedule'
@@ -76,6 +76,12 @@ export function Wedstrijd(props: Props) {
     [blok, volgendBlok],
   )
   const ketens = useMemo(() => (blok ? wisselKetens(vorigBlok, blok) : []), [vorigBlok, blok])
+
+  // Valt het volgende wisselmoment op een kwartgrens? Dan is het een rustwissel:
+  // de klok staat stil en iedereen staat bij elkaar, dus dat is het rustigste
+  // moment om te wisselen. Dat verdient een eigen kop.
+  const komendeIsRust = volgendBlok !== null && kwartVanBlok(huidigBlok + 1) !== kwartVanBlok(huidigBlok)
+  const huidigeIsRust = vorigBlok !== null && kwartVanBlok(huidigBlok) !== kwartVanBlok(huidigBlok - 1)
 
   // Het alarm hoort bij de overgang naar een nieuw blok. `alarmTot` onthoudt
   // welk blok al is aangekondigd, zodat een refresh niet opnieuw belt.
@@ -214,8 +220,13 @@ export function Wedstrijd(props: Props) {
       )}
 
       {komendeKetens.length > 0 && (
-        <section className="vooruitblik">
-          <h2>Volgende wissel</h2>
+        <section className={`vooruitblik ${komendeIsRust ? 'rust' : ''}`}>
+          <h2>{komendeIsRust ? 'Rustwissel — na dit kwart' : 'Volgende wissel'}</h2>
+          {komendeIsRust && (
+            <p className="tel">
+              De klok staat dan stil. Je kunt dit rustig doen tijdens de pauze.
+            </p>
+          )}
           <ul className="ketens">
             {komendeKetens.map((keten) => (
               <Wisselketen key={keten.eruit} keten={keten} naam={naam} />
@@ -295,6 +306,8 @@ export function Wedstrijd(props: Props) {
       {overlayZichtbaar && blok && (
         <SubOverlay
           blokNummer={huidigBlok + 1}
+          kwart={kwart}
+          rustwissel={huidigeIsRust}
           ketens={ketens}
           naam={naam}
           onKlaar={() => zetOverlayZichtbaar(false)}

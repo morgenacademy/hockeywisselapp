@@ -484,3 +484,10 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   letter-spacing: 0.09em;
 }
 
+
+/* --- rustwissel: het makkelijkste wisselmoment, dus eigen kop --- */
+.overlay-kaart.rustwissel { border-color: var(--erin); }
+.rustkop { display: flex; flex-direction: column; gap: 4px; }
+.rustkop h2 { color: var(--erin); margin: 0; }
+.vooruitblik.rust { border-color: var(--erin); }
+.vooruitblik.rust h2 { color: var(--erin); }

@@ -100,9 +100,26 @@ speelster die doorschuift; en pas als dat ook niet kan met meer — en dan krijg
 het te zien. Ook de rustrotatie kijkt vooruit: bij speelsters met dezelfde
 speeltijd kiest de app degene wier vervanger direct op haar plek kan.
 
-Over alle bezettingen en keeperkeuzes samen scheelt dat 605 → 140 schuiven, en
-zakt het aantal wisselmomenten met meer dan één schuif van 151 naar 25. De
+Over alle bezettingen en keeperkeuzes samen scheelt dat 605 → ~320 schuiven. De
 speeltijd blijft daarbij overal binnen één blok.
+
+### Samen spelen
+
+Nora en Kiki kunnen allebei op het centrale middenveld, maar er is één plek. De
+rustrotatie zette ze daardoor om en om op de bank: precies in de blokken waarin
+de een speelde, rustte de ander. Bij acht van de twaalf blokken elk stonden ze
+dan maar vier blokken samen in het veld — het rekenkundige minimum.
+
+Een reparatiestap laat hun rustbeurten samenvallen, waardoor ze acht blokken
+samen spelen en degene die niet centraal staat gewoon op links- of rechtsmid
+komt. Dat kost wel doorschuiven: van 140 naar ~320 over alle bezettingen samen.
+Wil je die afruil anders, dan is `MAX_SAMENSPEL_RUILEN` in `schedule.ts` de knop.
+
+Eerlijk over een beperking: de sterkte-volgorde voor de centrale posities stuurt
+hierdoor bijna niets meer. Gelijke speeltijd, blijven staan waar je stond en
+samen spelen laten simpelweg geen ruimte meer over — bij volle bezetting komt
+iedereen uit de pool op precies zes centrale blokken uit. De volgorde bepaalt nog
+wel wie er centraal ínvalt als er een plek vrijkomt.
 
 ## Gebruiken
 
@@ -115,12 +132,18 @@ ook zonder bereik langs het veld.
    centrale posities onvulbaar maakt.
 3. **Centrale posities** — zet de speelsters op sterkte. Bovenaan staat het
    vaakst centraal; speeltijd blijft leidend, dus iedereen komt aan de beurt.
-4. **Wedstrijd** — Start/Pauze, het veld met de opstelling, en een vooruitblik op
+4. **Startopstelling** — het voorstel van de app, waarin je zelf plekken kunt
+   aanpassen. Wat je vastzet geldt voor het eerste blok; de rest van de wedstrijd
+   rekent daaromheen.
+5. **Wedstrijd** — Start/Pauze, het veld met de opstelling, en een vooruitblik op
    de volgende wissel. Speelsters die eraf moeten krijgen een rode rand met
    ERUIT; wie doorschuift krijgt SCHUIFT.
 
 Bij het wisselmoment gaat er een belletje af (plus trillen) en verschijnt de
 wissel in de vorm waarin je hem roept: *"Nora, jij komt erin voor Eva Hoevers."*
+
+De wissel op een kwartgrens heet een **rustwissel** en krijgt een eigen kaart:
+de klok staat dan stil, dus dat is het rustigste moment om te wisselen.
 
 Moet er toch iemand doorschuiven, dan staat de hele ketting op één kaart, zodat
 niemand per ongeluk het veld af loopt:

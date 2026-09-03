@@ -112,7 +112,7 @@ export function Sterkte({ aanwezigen, keeperId, achter, midden, onZet, onTerug, 
 
       <div className="knoppenrij">
         <button className="knop klein" onClick={onTerug}>Terug</button>
-        <button className="knop groot" onClick={onVerder}>Wedstrijd starten</button>
+        <button className="knop groot" onClick={onVerder}>Verder: startopstelling</button>
       </div>
     </div>
   )

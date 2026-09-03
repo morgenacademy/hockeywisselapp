@@ -433,6 +433,12 @@ function kanMetEenSchuif(veld: Speelster[], niveau: Niveau, ctx: Context): boole
   )
 }
 
+/** In welke linies kan deze speelster een sleutelpositie bezetten? */
+function sleutelLinies(speelster: Speelster): Linie[] {
+  if (!speelster.centraal) return []
+  return (['V', 'M'] as Linie[]).filter((l) => speelster.linies.includes(l))
+}
+
 /**
  * Hoe schaars is deze speelster voor de sleutelposities? Hoort ze bij een kleine
  * pool, dan kan er per blok maar één van hen op de bank -- dus moet ze haar
@@ -906,6 +912,124 @@ function repareerLinies(
 }
 
 /**
+ * Haalt speelsters die elkaar ontwijken van het dieptepunt af.
+ *
+ * Nora en Kiki kunnen allebei op het centrale middenveld, maar er is één plek.
+ * De rustrotatie zet ze daardoor om en om op de bank: precies in de blokken
+ * waarin de een speelt, rust de ander. Bij acht van de twaalf blokken elk staan
+ * ze dan maar vier blokken samen in het veld -- het rekenkundige minimum.
+ * Vallen hun rustbeurten samen, dan worden dat er acht, en speelt degene die
+ * niet centraal staat gewoon op links- of rechtsmid.
+ *
+ * Bewust zuinig: alleen paren die écht op hun minimum staan, en hoogstens een
+ * handvol ruilen. Elke ruil verandert de bezetting van twee blokken en kost
+ * daardoor al snel extra doorschuiven, en dat weegt zwaarder dan een paar
+ * blokken samenspel erbij.
+ *
+ * Ruilt in paren, net als `repareerLinies`: A gaat er in blok i in en in blok j
+ * uit, de ander precies andersom. Ieders speeltijd blijft exact gelijk.
+ */
+const MAX_SAMENSPEL_RUILEN = 4
+
+function repareerSamenspel(velden: Speelster[][], veldSpeelsters: Speelster[]): Speelster[][] | null {
+  const huidig = velden.map((veld) => [...veld])
+
+  const paren: [Speelster, Speelster][] = []
+  for (let a = 0; a < veldSpeelsters.length; a++) {
+    for (let b = a + 1; b < veldSpeelsters.length; b++) {
+      const linies = sleutelLinies(veldSpeelsters[b])
+      if (sleutelLinies(veldSpeelsters[a]).some((l) => linies.includes(l))) {
+        paren.push([veldSpeelsters[a], veldSpeelsters[b]])
+      }
+    }
+  }
+  if (paren.length === 0) return null
+
+  const speelt = (blok: number, id: string) => huidig[blok].some((s) => s.id === id)
+
+  /**
+   * Totaal aantal blokken dat concurrerende speelsters samen in het veld staan.
+   * Hoger is beter. Bewust de som en niet "hoeveel paren staan op hun minimum":
+   * dat laatste stopt zodra een paar er nét boven zit, en dan speelt Nora nog
+   * steeds maar vijf van de twaalf blokken met Kiki samen.
+   */
+  const samenTotaal = () =>
+    paren.reduce(
+      (som, [a, b]) => som + huidig.filter((_, i) => speelt(i, a.id) && speelt(i, b.id)).length,
+      0,
+    )
+
+  let aangepast = false
+  let score = samenTotaal()
+
+  for (let ronde = 0; ronde < MAX_SAMENSPEL_RUILEN; ronde++) {
+    let beste: {
+      i: number
+      j: number
+      heen: Speelster
+      terug: Speelster
+      waarde: number
+      onrust: number
+    } | null = null
+
+    for (let i = 0; i < huidig.length; i++) {
+      for (let j = 0; j < huidig.length; j++) {
+        if (i === j) continue
+        const opI = new Set(huidig[i].map((s) => s.id))
+        const opJ = new Set(huidig[j].map((s) => s.id))
+        for (const heen of veldSpeelsters) {
+          if (opI.has(heen.id) || !opJ.has(heen.id)) continue
+          for (const terug of veldSpeelsters) {
+            if (terug.id === heen.id || !opI.has(terug.id) || opJ.has(terug.id)) continue
+
+            const nieuwI = huidig[i].map((s) => (s.id === terug.id ? heen : s))
+            const nieuwJ = huidig[j].map((s) => (s.id === heen.id ? terug : s))
+            if (!isBlokTeBezetten(nieuwI, false) || !isBlokTeBezetten(nieuwJ, false)) continue
+            if (isBlokTeBezetten(huidig[i], true) && !isBlokTeBezetten(nieuwI, true)) continue
+            if (isBlokTeBezetten(huidig[j], true) && !isBlokTeBezetten(nieuwJ, true)) continue
+
+            const oudI = huidig[i]
+            const oudJ = huidig[j]
+            huidig[i] = nieuwI
+            huidig[j] = nieuwJ
+            // `terug` gaat in blok i naar de bank en `heen` in blok j: geen van
+            // beide mag daardoor twee blokken op rij bank krijgen.
+            if (dubbeleBank(huidig, i, terug.id) || dubbeleBank(huidig, j, heen.id)) {
+              huidig[i] = oudI
+              huidig[j] = oudJ
+              continue
+            }
+            const na = samenTotaal()
+            huidig[i] = oudI
+            huidig[j] = oudJ
+
+            if (na <= score) continue
+            // Twee speelsters uit dezelfde linie ruilen kost het minst: de
+            // invaller past dan op de plek die vrijkomt en de rest van het veld
+            // hoeft niet door te schuiven. Bij gelijke winst wint de rustigste
+            // ruil.
+            const gedeeld = heen.linies.filter((l) => terug.linies.includes(l)).length
+            const onrust = (gedeeld > 0 ? 0 : 2) + Math.abs(i - j) / huidig.length
+            if (!beste || na > beste.waarde || (na === beste.waarde && onrust < beste.onrust)) {
+              beste = { i, j, heen, terug, waarde: na, onrust }
+            }
+          }
+        }
+      }
+    }
+
+    if (!beste) break
+    const { i, j, heen, terug } = beste
+    huidig[i] = huidig[i].map((s) => (s.id === terug.id ? heen : s))
+    huidig[j] = huidig[j].map((s) => (s.id === heen.id ? terug : s))
+    score = beste.waarde
+    aangepast = true
+  }
+
+  return aangepast ? huidig : null
+}
+
+/**
  * Bouwt het wisselschema. Twee stappen per blok: eerst wie rust (dat bepaalt de
  * speeltijd), dan wie waar staat. Die volgorde zorgt ervoor dat de speeltijd
  * altijd klopt en de positiekeuze zich daarbinnen aanpast.
@@ -966,7 +1090,9 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
   if (naSpeeltijd) velden = naSpeeltijd
   const naLinies = repareerLinies(velden, veldSpeelsters, startStand)
   if (naLinies) velden = naLinies
-  if (naSpeeltijd || naLinies) uitkomst = bouw(velden)
+  const naSamenspel = repareerSamenspel(velden, veldSpeelsters)
+  if (naSamenspel) velden = naSamenspel
+  if (naSpeeltijd || naLinies || naSamenspel) uitkomst = bouw(velden)
 
   const { blokken, ctx } = uitkomst
   const waarschuwingen: string[] = []

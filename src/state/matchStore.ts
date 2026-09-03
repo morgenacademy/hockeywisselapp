@@ -13,7 +13,7 @@ import { SELECTIE, magOpPositie, type Speelster } from '../domain/players'
 import { maakRooster, type Blok, type Opstelling, type Rooster } from '../domain/schedule'
 import { OEFENMODUS, STANDAARD_OEFENSNELHEID } from '../oefenmodus'
 
-export type Fase = 'aanwezigheid' | 'keeper' | 'sterkte' | 'wedstrijd'
+export type Fase = 'aanwezigheid' | 'keeper' | 'sterkte' | 'opstelling' | 'wedstrijd'
 
 export interface WedstrijdStand {
   fase: Fase
