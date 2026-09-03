@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { AANTAL_BLOKKEN, BLOK_SECONDEN, WEDSTRIJD_SECONDEN } from '../clock'
+import {
+  AANTAL_BLOKKEN,
+  BLOK_SECONDEN,
+  WEDSTRIJD_SECONDEN,
+  isKwartStart,
+  kwartVanBlok,
+} from '../clock'
 import { AANTAL_VELDPOSITIES, POSITIE_CODES, positieInfo, type Positie } from '../formation'
 import {
   SELECTIE,
@@ -661,9 +667,121 @@ describe('schuiven is het laatste redmiddel', () => {
     }
 
     expect(ongemeld, 'blokken met meerdere schuiven zonder melding').toBe(0)
-    expect(schuiven).toBeLessThanOrEqual(400)
-    expect(blokkenMetMeerdere).toBeLessThanOrEqual(100)
+    expect(schuiven).toBeLessThanOrEqual(150)
+    expect(blokkenMetMeerdere).toBeLessThanOrEqual(50)
     expect(ergsteBlok).toBeLessThanOrEqual(3)
+  })
+
+  it('zet het schuiven dat overblijft in de rust, niet midden in een kwart', () => {
+    // Midden in een kwart loopt de klok en staat iedereen verspreid; in de rust
+    // staat de klok stil en sta je bij elkaar. Een schuif die je niet kwijt kunt
+    // hoort daarom op een kwartgrens.
+    //
+    // IJkpunt vóór de verplaatsingsstap: 183 van de 312 schuiven vielen midden
+    // in een kwart (59%), en 113 van de 324 kwarten bevatte er een (35%).
+    let inKwart = 0
+    let bijRust = 0
+    let kwartenMetSchuif = 0
+    let kwartenTotaal = 0
+
+    for (const aantal of alleMaten) {
+      const aanwezigen = SELECTIE.slice(0, aantal)
+      for (const keeper of aanwezigen) {
+        const r = maakRooster({
+          aanwezigen,
+          keeperId: keeper.id,
+          sterkteAchter: sterkteAchter.filter(
+            (id) => id !== keeper.id && aanwezigen.some((a) => a.id === id),
+          ),
+          sterkteMidden: sterkteMidden.filter(
+            (id) => id !== keeper.id && aanwezigen.some((a) => a.id === id),
+          ),
+        })
+        const perKwart = [0, 0, 0, 0]
+        for (let i = 1; i < r.blokken.length; i++) {
+          const aantalSchuiven = wisselOverzicht(r.blokken[i - 1], r.blokken[i]).verplaatst.length
+          if (aantalSchuiven === 0) continue
+          if (isKwartStart(i)) {
+            bijRust += aantalSchuiven
+          } else {
+            inKwart += aantalSchuiven
+            perKwart[kwartVanBlok(i) - 1] += aantalSchuiven
+          }
+        }
+        kwartenTotaal += 4
+        kwartenMetSchuif += perKwart.filter((aantal) => aantal > 0).length
+      }
+    }
+
+    // Het grootste deel van wat overblijft valt in de rust.
+    expect(bijRust).toBeGreaterThan(inKwart * 2)
+    // En de meeste kwarten worden helemaal schuifvrij uitgespeeld.
+    expect(kwartenMetSchuif / kwartenTotaal).toBeLessThan(0.1)
+  })
+})
+
+describe('handmatig ingrijpen tijdens de wedstrijd', () => {
+  it('zet een speelster vast zonder de rest van het veld te breken', () => {
+    // Dit is de rustwissel: kwart 1 is gespeeld, de leider verzet iemand voor
+    // kwart 2, en de app rekent de rest van de wedstrijd eromheen.
+    //
+    // Waar het misging: de haalbaarheidstoets telde een vastgezette speelster
+    // nog voor álle plekken mee. Zet je Nora vast op linksback, dan is zij weg
+    // uit de pool voor laatste vrouw en centrale verdediger -- en juist daar is
+    // het krap. Het blok leek rond te komen en kwam dat niet, waarna er iemand
+    // centraal stond die dat niet kan. 19 van deze 309 combinaties liepen daar
+    // op vast.
+    let proeven = 0
+
+    for (const aantal of [12, 14, 16]) {
+      const aanwezigen = SELECTIE.slice(0, aantal)
+      const keeperId = aanwezigen[4].id
+      const opzet = {
+        aanwezigen,
+        keeperId,
+        sterkteAchter: sterkteAchter.filter(
+          (id) => id !== keeperId && aanwezigen.some((a) => a.id === id),
+        ),
+        sterkteMidden: sterkteMidden.filter(
+          (id) => id !== keeperId && aanwezigen.some((a) => a.id === id),
+        ),
+      }
+      const basis = maakRooster(opzet)
+      const gespeeldVoor: Record<string, number> = {}
+      for (const blok of basis.blokken.slice(0, 3)) {
+        for (const id of Object.values(blok.opstelling)) {
+          if (id && id !== keeperId) gespeeldVoor[id] = (gespeeldVoor[id] ?? 0) + 1
+        }
+      }
+
+      for (const positie of POSITIE_CODES) {
+        for (const speelster of aanwezigen) {
+          if (speelster.id === keeperId || !magOpPositie(speelster, positie)) continue
+          proeven++
+          const r = maakRooster({
+            ...opzet,
+            vanafBlok: 3,
+            gespeeldVoor,
+            eerdereBlokken: basis.blokken.slice(0, 3),
+            vastgezet: { 3: { [positie]: speelster.id } },
+          })
+
+          // De keuze van de leider staat er ook echt.
+          expect(r.blokken[3].opstelling[positie], `${aantal} aanwezig, ${speelster.naam} op ${positie}`).toBe(speelster.id)
+          // En niemand staat centraal die dat niet kan.
+          expect(
+            r.waarschuwingen.filter((w) => w.includes('Noodbezetting')),
+            `${aantal} aanwezig, ${speelster.naam} vastgezet op ${positie}`,
+          ).toEqual([])
+          // Het gespeelde kwart blijft ongemoeid.
+          for (let i = 0; i < 3; i++) {
+            expect(r.blokken[i].opstelling).toEqual(basis.blokken[i].opstelling)
+          }
+        }
+      }
+    }
+
+    expect(proeven).toBeGreaterThan(300)
   })
 })
 

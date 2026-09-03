@@ -62,9 +62,17 @@ export function Wedstrijd(props: Props) {
     return speelster ? korteNaam(speelster, aanwezigen) : '?'
   }
 
-  const blok = rooster.blokken[huidigBlok]
-  const vorigBlok = huidigBlok > 0 ? rooster.blokken[huidigBlok - 1] : null
-  const volgendBlok = rooster.blokken[huidigBlok + 1] ?? null
+  // Welk blok ben je aan het bekijken? Tijdens het spelen is dat het blok dat
+  // loopt. In de rust niet: `huidigBlok` is dan nog het blok dat net gespeeld
+  // ís, en daar valt niets meer aan te veranderen. Wie in de rust de opstelling
+  // wil bijstellen, bedoelt het kwart dat gaat komen -- dus kijkt het scherm
+  // daar dan naartoe: het veld, de bank, het ruilpaneel en wat je vastzet.
+  const rust = kwartVoorbij && rooster.blokken[huidigBlok + 1] !== undefined
+  const bewerkBlok = rust ? huidigBlok + 1 : huidigBlok
+
+  const blok = rooster.blokken[bewerkBlok]
+  const vorigBlok = bewerkBlok > 0 ? rooster.blokken[bewerkBlok - 1] : null
+  const volgendBlok = rooster.blokken[bewerkBlok + 1] ?? null
 
   // Vooruitblik op de eerstvolgende wissel: daarmee kun je de speelsters die
   // eraf moeten alvast aanwijzen, in plaats van pas bij het belletje te zoeken.
@@ -81,8 +89,10 @@ export function Wedstrijd(props: Props) {
   // Valt het volgende wisselmoment op een kwartgrens? Dan is het een rustwissel:
   // de klok staat stil en iedereen staat bij elkaar, dus dat is het rustigste
   // moment om te wisselen. Dat verdient een eigen kop.
-  const komendeIsRust = volgendBlok !== null && kwartVanBlok(huidigBlok + 1) !== kwartVanBlok(huidigBlok)
-  const huidigeIsRust = vorigBlok !== null && kwartVanBlok(huidigBlok) !== kwartVanBlok(huidigBlok - 1)
+  const komendeIsRust =
+    volgendBlok !== null && kwartVanBlok(bewerkBlok + 1) !== kwartVanBlok(bewerkBlok)
+  const huidigeIsRust =
+    vorigBlok !== null && kwartVanBlok(huidigBlok) !== kwartVanBlok(huidigBlok - 1)
 
   // Het alarm hoort bij de overgang naar een nieuw blok. `alarmTot` onthoudt
   // welk blok al is aangekondigd, zodat een refresh niet opnieuw belt.
@@ -128,7 +138,7 @@ export function Wedstrijd(props: Props) {
 
   const zetSpeelster = (id: string) => {
     if (!gekozenPositie) return
-    onZetOpPositie(huidigBlok, gekozenPositie, id)
+    onZetOpPositie(bewerkBlok, gekozenPositie, id)
     zetGekozenPositie(null)
   }
 
@@ -175,6 +185,12 @@ export function Wedstrijd(props: Props) {
         <div className="melding waarschuwing">
           {blokWaarschuwingen.map((w) => <p key={w}>{w}</p>)}
         </div>
+      )}
+
+      {rust && (
+        <p className="bewerkkop">
+          Opstelling voor kwart {kwartVanBlok(bewerkBlok)} — tik op een plek om te wijzigen
+        </p>
       )}
 
       <Field

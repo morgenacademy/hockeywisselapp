@@ -413,6 +413,20 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .vooruitblik .keten { background: var(--paneel-licht); }
 
+/* In de rust kijkt het veld vooruit naar het komende kwart. Dat moet
+   onmiskenbaar zijn, anders denk je dat je het gespeelde kwart aanpast. */
+.bewerkkop {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--paneel-licht);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
 /* --- aanwezigheid: afvinken en centraal staan los van elkaar --- */
 .rij-groep { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; }
 .rij-groep .rij { border-radius: var(--radius); }

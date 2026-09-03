@@ -1,4 +1,4 @@
-import { AANTAL_BLOKKEN } from './clock'
+import { AANTAL_BLOKKEN, isKwartStart } from './clock'
 import {
   AANTAL_VELDPOSITIES,
   POSITIE_CODES,
@@ -98,9 +98,38 @@ function kandidatenMatrix(veld: Speelster[], streng: boolean): number[][] {
  * kijken of de drie centrale plekken te vullen zijn, want je kunt net zo goed
  * te weinig verdedigers overhouden voor linksback en rechtsback.
  */
-export function isBlokTeBezetten(veld: Speelster[], streng = true): boolean {
+export function isBlokTeBezetten(veld: Speelster[], streng = true, vast: Opstelling = {}): boolean {
   if (veld.length < AANTAL_VELDPOSITIES) return false
-  return isVolledigTeBezetten(AANTAL_VELDPOSITIES, kandidatenMatrix(veld, streng), veld.length)
+
+  // Een handmatig vastgezette speelster bezet één plek en is voor de rest niet
+  // meer beschikbaar. Rekent de toets haar nog voor alle plekken mee, dan lijkt
+  // het blok rond te komen terwijl dat niet zo is: zet de leider Nora vast op
+  // het centrale middenveld, dan is zij weg uit de pool voor laatste vrouw en
+  // centrale verdediger, en juist daar is het krap. Vandaar dat zowel de plek
+  // als de speelster hier uit de koppeling gaan.
+  const gepind = new Set<string>()
+  const bezet = new Set<Positie>()
+  for (const positie of POSITIE_CODES) {
+    const id = vast[positie]
+    if (id && veld.some((s) => s.id === id)) {
+      gepind.add(id)
+      bezet.add(positie)
+    }
+  }
+  if (gepind.size === 0) {
+    return isVolledigTeBezetten(AANTAL_VELDPOSITIES, kandidatenMatrix(veld, streng), veld.length)
+  }
+
+  const vrij = veld.filter((s) => !gepind.has(s.id))
+  const posities = POSITIE_CODES.filter((positie) => !bezet.has(positie))
+  const kandidaten = posities.map((positie) => {
+    const rij: number[] = []
+    vrij.forEach((speelster, index) => {
+      if (mag(speelster, positie, streng)) rij.push(index)
+    })
+    return rij
+  })
+  return isVolledigTeBezetten(posities.length, kandidaten, vrij.length)
 }
 
 /** Alleen de drie sleutelposities; gebruikt door de controle vooraf. */
@@ -489,6 +518,7 @@ function kiesRusters(
   vast: Set<string>,
   blok: number,
   ctx: Context,
+  vastgezet: Opstelling = {},
 ): Speelster[] {
   if (aantalRust <= 0) return []
 
@@ -528,8 +558,8 @@ function kiesRusters(
       // Harde eis: wat overblijft moet het blok nog rond kunnen zetten. Wie je
       // daarna nog wegneemt kan altijd iemand zijn die buiten de koppeling
       // valt, dus deze controle per stap is voldoende.
-      if (!isBlokTeBezetten(overblijvend, false)) continue
-      if (niveau === 'streng' && !isBlokTeBezetten(overblijvend, true)) continue
+      if (!isBlokTeBezetten(overblijvend, false, vastgezet)) continue
+      if (niveau === 'streng' && !isBlokTeBezetten(overblijvend, true, vastgezet)) continue
       gekozen.push(kandidaat)
       gekozenIds.add(kandidaat.id)
     }
@@ -569,8 +599,8 @@ function kiesRusters(
             s.id === eruit.id ? erin : s,
           )
           const veld = veldNa(alternatief)
-          if (!isBlokTeBezetten(veld, false)) continue
-          if (niveau === 'streng' && !isBlokTeBezetten(veld, true)) continue
+          if (!isBlokTeBezetten(veld, false, vastgezet)) continue
+          if (niveau === 'streng' && !isBlokTeBezetten(veld, true, vastgezet)) continue
           if (schuifTekort(veld, niveau, ctx) < tekort) {
             beter = alternatief
             break
@@ -640,7 +670,9 @@ function kiesVeld(
   }
 
   const aantalRust = Math.max(0, veldSpeelsters.length - AANTAL_VELDPOSITIES)
-  const rustIds = new Set(kiesRusters(veldSpeelsters, aantalRust, vastIds, blokIndex, ctx).map((s) => s.id))
+  const rustIds = new Set(
+    kiesRusters(veldSpeelsters, aantalRust, vastIds, blokIndex, ctx, vastgezet).map((s) => s.id),
+  )
   return veldSpeelsters.filter((s) => !rustIds.has(s.id))
 }
 
@@ -781,6 +813,7 @@ function repareerSpeeltijd(
   velden: Speelster[][],
   veldSpeelsters: Speelster[],
   startStand: Map<string, number>,
+  vastVoor: VastVoor,
 ): Speelster[][] | null {
   const huidig = velden.map((veld) => [...veld])
   let aangepast = false
@@ -817,13 +850,20 @@ function repareerSpeeltijd(
         const opVeld = new Set(veld.map((s) => s.id))
         for (const eruit of zwaar) {
           if (!opVeld.has(eruit.id)) continue
+          // Wat de leider zelf heeft neergezet blijft staan.
+          if (staatVast(vastVoor, blok, eruit.id)) continue
           if (vermijdDubbel && dubbeleBank(huidig, blok, eruit.id)) continue
           for (const erin of licht) {
             if (opVeld.has(erin.id)) continue
             const nieuw = veld.map((s) => (s.id === eruit.id ? erin : s))
             // De ruil mag het blok niet onspeelbaar maken.
-            if (!isBlokTeBezetten(nieuw, false)) continue
-            if (isBlokTeBezetten(veld, true) && !isBlokTeBezetten(nieuw, true)) continue
+            if (!isBlokTeBezetten(nieuw, false, vastVoor(blok))) continue
+            if (
+              isBlokTeBezetten(veld, true, vastVoor(blok)) &&
+              !isBlokTeBezetten(nieuw, true, vastVoor(blok))
+            ) {
+              continue
+            }
             huidig[blok] = nieuw
             aangepast = true
             geruild = true
@@ -838,6 +878,20 @@ function repareerSpeeltijd(
   }
 
   return aangepast ? huidig : null
+}
+
+/**
+ * De handmatig vastgezette plekken van één blok, op index in `velden`.
+ *
+ * De reparatiestappen ruilen bank- en veldplekken om, en moeten daarbij weten
+ * welke plekken de leider zelf heeft vastgelegd: een vastgezette speelster
+ * bezet één plek en telt voor de overige plekken niet meer mee.
+ */
+type VastVoor = (index: number) => Opstelling | undefined
+
+/** Heeft de leider deze speelster in dit blok zelf op een plek gezet? */
+function staatVast(vastVoor: VastVoor, index: number, id: string): boolean {
+  return Object.values(vastVoor(index) ?? {}).includes(id)
 }
 
 /** Verschil tussen de meest- en minstspelende speelster. */
@@ -864,25 +918,28 @@ function repareerLinies(
   velden: Speelster[][],
   veldSpeelsters: Speelster[],
   startStand: Map<string, number>,
+  vastVoor: VastVoor,
 ): Speelster[][] | null {
   const huidig = velden.map((veld) => [...veld])
   const grens = Math.max(1, spreiding(huidig, veldSpeelsters, startStand))
   let aangepast = false
 
   const blijftGeldig = (blok: number, nieuw: Speelster[]) =>
-    isBlokTeBezetten(nieuw, false) &&
-    (!isBlokTeBezetten(huidig[blok], true) || isBlokTeBezetten(nieuw, true))
+    isBlokTeBezetten(nieuw, false, vastVoor(blok)) &&
+    (!isBlokTeBezetten(huidig[blok], true, vastVoor(blok)) ||
+      isBlokTeBezetten(nieuw, true, vastVoor(blok)))
 
   for (let i = 0; i < huidig.length; i++) {
-    if (isBlokTeBezetten(huidig[i], true)) continue
+    if (isBlokTeBezetten(huidig[i], true, vastVoor(i))) continue
     const veldI = new Set(huidig[i].map((s) => s.id))
     const bankI = veldSpeelsters.filter((s) => !veldI.has(s.id))
 
     let opgelost = false
     for (const eruit of huidig[i]) {
+      if (staatVast(vastVoor, i, eruit.id)) continue
       for (const erin of bankI) {
         const nieuwI = huidig[i].map((s) => (s.id === eruit.id ? erin : s))
-        if (!isBlokTeBezetten(nieuwI, true)) continue
+        if (!isBlokTeBezetten(nieuwI, true, vastVoor(i))) continue
 
         // Eerst het tegenblok zoeken: daar staat `erin` in het veld en `eruit`
         // op de bank, zodat de omgekeerde ruil hun speeltijd rechttrekt.
@@ -890,6 +947,7 @@ function repareerLinies(
           if (j === i) continue
           const veldJ = new Set(huidig[j].map((s) => s.id))
           if (!veldJ.has(erin.id) || veldJ.has(eruit.id)) continue
+          if (staatVast(vastVoor, j, erin.id)) continue
           const nieuwJ = huidig[j].map((s) => (s.id === erin.id ? eruit : s))
           if (!blijftGeldig(j, nieuwJ)) continue
           if (dubbeleBank(huidig, j, erin.id)) continue
@@ -936,9 +994,8 @@ function repareerLinies(
  */
 const MAX_SAMENSPEL_RUILEN = 4
 
-function repareerSamenspel(velden: Speelster[][], veldSpeelsters: Speelster[]): Speelster[][] | null {
-  const huidig = velden.map((veld) => [...veld])
-
+/** Speelsters die om dezelfde centrale plek concurreren, en elkaar dus ontwijken. */
+function concurrerendeParen(veldSpeelsters: Speelster[]): [Speelster, Speelster][] {
   const paren: [Speelster, Speelster][] = []
   for (let a = 0; a < veldSpeelsters.length; a++) {
     for (let b = a + 1; b < veldSpeelsters.length; b++) {
@@ -948,21 +1005,66 @@ function repareerSamenspel(velden: Speelster[][], veldSpeelsters: Speelster[]): 
       }
     }
   }
+  return paren
+}
+
+/** Totaal aantal blokken dat concurrerende paren samen in het veld staan; hoger is beter. */
+function samenspelTotaal(velden: Speelster[][], paren: [Speelster, Speelster][]): number {
+  const speelt = (blok: number, id: string) => velden[blok].some((s) => s.id === id)
+  return paren.reduce(
+    (som, [a, b]) => som + velden.filter((_, i) => speelt(i, a.id) && speelt(i, b.id)).length,
+    0,
+  )
+}
+
+/**
+ * Hoeveel concurrerende paren staan op hun rekenkundige minimum aan samenspel?
+ *
+ * Twee speelsters die elk n van de N blokken spelen, staan onvermijdelijk
+ * minstens `n_a + n_b - N` blokken samen in het veld. Zitten ze daar precies op,
+ * dan ontwijken hun rustbeurten elkaar volledig -- en dat is nou net wat
+ * `repareerSamenspel` heeft rechtgezet. Dit is de som niet, maar de telling:
+ * een ruil mag het totaal gelijk houden en tóch één paar terugduwen naar zijn
+ * dieptepunt, en dat is precies de regressie die dit tegenhoudt.
+ */
+function parenOpMinimum(velden: Speelster[][], paren: [Speelster, Speelster][]): number {
+  const speelt = (blok: number, id: string) => velden[blok].some((s) => s.id === id)
+  const gespeeld = (id: string) => velden.filter((_, i) => speelt(i, id)).length
+  let aantal = 0
+  for (const [a, b] of paren) {
+    const samen = velden.filter((_, i) => speelt(i, a.id) && speelt(i, b.id)).length
+    const minimum = Math.max(0, gespeeld(a.id) + gespeeld(b.id) - velden.length)
+    if (samen <= minimum) aantal++
+  }
+  return aantal
+}
+
+/** Hoe vaak zit iemand twee blokken achter elkaar op de bank? */
+function dubbeleRustTelling(velden: Speelster[][], veldSpeelsters: Speelster[]): number {
+  let aantal = 0
+  for (let i = 1; i < velden.length; i++) {
+    for (const speelster of veldSpeelsters) {
+      const rust = (blok: number) => !velden[blok].some((s) => s.id === speelster.id)
+      if (rust(i - 1) && rust(i)) aantal++
+    }
+  }
+  return aantal
+}
+
+function repareerSamenspel(
+  velden: Speelster[][],
+  veldSpeelsters: Speelster[],
+  vastVoor: VastVoor,
+): Speelster[][] | null {
+  const huidig = velden.map((veld) => [...veld])
+
+  const paren = concurrerendeParen(veldSpeelsters)
   if (paren.length === 0) return null
 
-  const speelt = (blok: number, id: string) => huidig[blok].some((s) => s.id === id)
-
-  /**
-   * Totaal aantal blokken dat concurrerende speelsters samen in het veld staan.
-   * Hoger is beter. Bewust de som en niet "hoeveel paren staan op hun minimum":
-   * dat laatste stopt zodra een paar er nét boven zit, en dan speelt Nora nog
-   * steeds maar vijf van de twaalf blokken met Kiki samen.
-   */
-  const samenTotaal = () =>
-    paren.reduce(
-      (som, [a, b]) => som + huidig.filter((_, i) => speelt(i, a.id) && speelt(i, b.id)).length,
-      0,
-    )
+  // Bewust de som en niet "hoeveel paren staan op hun minimum": dat laatste
+  // stopt zodra een paar er nét boven zit, en dan speelt Nora nog steeds maar
+  // vijf van de twaalf blokken met Kiki samen.
+  const samenTotaal = () => samenspelTotaal(huidig, paren)
 
   let aangepast = false
   let score = samenTotaal()
@@ -984,14 +1086,27 @@ function repareerSamenspel(velden: Speelster[][], veldSpeelsters: Speelster[]): 
         const opJ = new Set(huidig[j].map((s) => s.id))
         for (const heen of veldSpeelsters) {
           if (opI.has(heen.id) || !opJ.has(heen.id)) continue
+          if (staatVast(vastVoor, j, heen.id)) continue
           for (const terug of veldSpeelsters) {
             if (terug.id === heen.id || !opI.has(terug.id) || opJ.has(terug.id)) continue
+            if (staatVast(vastVoor, i, terug.id)) continue
 
             const nieuwI = huidig[i].map((s) => (s.id === terug.id ? heen : s))
             const nieuwJ = huidig[j].map((s) => (s.id === heen.id ? terug : s))
-            if (!isBlokTeBezetten(nieuwI, false) || !isBlokTeBezetten(nieuwJ, false)) continue
-            if (isBlokTeBezetten(huidig[i], true) && !isBlokTeBezetten(nieuwI, true)) continue
-            if (isBlokTeBezetten(huidig[j], true) && !isBlokTeBezetten(nieuwJ, true)) continue
+            if (!isBlokTeBezetten(nieuwI, false, vastVoor(i))) continue
+            if (!isBlokTeBezetten(nieuwJ, false, vastVoor(j))) continue
+            if (
+              isBlokTeBezetten(huidig[i], true, vastVoor(i)) &&
+              !isBlokTeBezetten(nieuwI, true, vastVoor(i))
+            ) {
+              continue
+            }
+            if (
+              isBlokTeBezetten(huidig[j], true, vastVoor(j)) &&
+              !isBlokTeBezetten(nieuwJ, true, vastVoor(j))
+            ) {
+              continue
+            }
 
             const oudI = huidig[i]
             const oudJ = huidig[j]
@@ -1074,6 +1189,28 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
 
   let uitkomst = bouw()
 
+  /**
+   * Hoe duur is het doorschuiven in dit rooster?
+   *
+   * Midden in een kwart loopt de klok en staat iedereen verspreid: daar is een
+   * schuif de duurste instructie die er is. In de rust staat de klok stil en is
+   * hij bijna gratis. Vandaar het gewicht van tien -- een schuif uit een kwart
+   * naar de rust verplaatsen is winst, ook al blijft het totaal gelijk.
+   */
+  const schuifKosten = (blokken: Blok[]): number => {
+    let kosten = 0
+    for (let i = Math.max(1, vanafBlok); i < blokken.length; i++) {
+      const aantal = wisselOverzicht(blokken[i - 1], blokken[i]).verplaatst.length
+      kosten += aantal * (isKwartStart(i) ? 1 : 10)
+    }
+    return kosten
+  }
+
+  /** Meldingen zoals "buiten haar linie": die mogen door het verplaatsen niet toenemen. */
+  const meldingen = (blokken: Blok[]): number =>
+    blokken.reduce((totaal, blok) => totaal + blok.waarschuwingen.length, 0)
+
+
   // De blokkeuze is greedy en kijkt maar één blok vooruit. Bij een kleine
   // centrale pool kan dat scheef aflopen: dezelfde twee speelsters moeten
   // steeds achterin blijven, en aan het eind past hun rustbeurt niet meer.
@@ -1091,13 +1228,82 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
     }
   }
   let velden = uitkomst.velden
-  const naSpeeltijd = repareerSpeeltijd(velden, veldSpeelsters, startStand)
+  const vastVoor: VastVoor = (index) => invoer.vastgezet?.[index + vanafBlok]
+  const naSpeeltijd = repareerSpeeltijd(velden, veldSpeelsters, startStand, vastVoor)
   if (naSpeeltijd) velden = naSpeeltijd
-  const naLinies = repareerLinies(velden, veldSpeelsters, startStand)
+  const naLinies = repareerLinies(velden, veldSpeelsters, startStand, vastVoor)
   if (naLinies) velden = naLinies
-  const naSamenspel = repareerSamenspel(velden, veldSpeelsters)
+  const naSamenspel = repareerSamenspel(velden, veldSpeelsters, vastVoor)
   if (naSamenspel) velden = naSamenspel
   if (naSpeeltijd || naLinies || naSamenspel) uitkomst = bouw(velden)
+
+  // De schuiven die hierna nog over zijn, zijn onvermijdelijk: het zijn er niet
+  // te veel, ze staan alleen op het verkeerde moment. Deze stap verhuist ze naar
+  // een kwartgrens door bank- en veldplekken tussen twee blokken te ruilen.
+  //
+  // Zo'n paar-ruil laat ieders speeltijd exact gelijk -- A speelt blok j in
+  // plaats van blok i, B andersom -- en de uitkomst wordt met `bouw` beoordeeld,
+  // dus wat hier gemeten wordt is precies wat de leider straks te zien krijgt.
+  // Alles wat eerder is rechtgezet blijft daarbij overeind: een kandidaat die
+  // meer meldingen oplevert wordt niet genomen.
+  const verplaatsbaar = (id: string, blok: number): boolean =>
+    !Object.values(invoer.vastgezet?.[blok] ?? {}).includes(id)
+  const paren = concurrerendeParen(veldSpeelsters)
+  /**
+   * Het meest schuiven op één overgang. Een schuif naar de rust verplaatsen is
+   * winst, maar niet als er dan vier tegelijk in die ene rust samenklonteren:
+   * dat is ook aan de kant van het veld geen te volgen instructie meer.
+   */
+  const drukstePiek = (blokken: Blok[]): number => {
+    let piek = 0
+    for (let i = Math.max(1, vanafBlok); i < blokken.length; i++) {
+      piek = Math.max(piek, wisselOverzicht(blokken[i - 1], blokken[i]).verplaatst.length)
+    }
+    return piek
+  }
+  const piekGrens = drukstePiek(uitkomst.blokken)
+
+  for (let ronde = 0; ronde < 12; ronde++) {
+    const kosten = schuifKosten(uitkomst.blokken)
+    if (kosten === 0) break
+    const grens = meldingen(uitkomst.blokken)
+    const rustGrens = dubbeleRustTelling(velden, veldSpeelsters)
+    const minimumGrens = parenOpMinimum(velden, paren)
+    let beter: typeof uitkomst | null = null
+
+    for (let i = 0; i < velden.length && !beter; i++) {
+      for (let j = 0; j < velden.length && !beter; j++) {
+        if (i === j) continue
+        const heen = velden[i].filter((s) => !velden[j].some((t) => t.id === s.id))
+        const terug = velden[j].filter((s) => !velden[i].some((t) => t.id === s.id))
+        for (const a of heen) {
+          if (!verplaatsbaar(a.id, i + vanafBlok)) continue
+          for (const b of terug) {
+            if (!verplaatsbaar(b.id, j + vanafBlok)) continue
+            const kandidaat = velden.map((veld, index) => {
+              if (index === i) return veld.map((s) => (s.id === a.id ? b : s))
+              if (index === j) return veld.map((s) => (s.id === b.id ? a : s))
+              return veld
+            })
+            if (!isBlokTeBezetten(kandidaat[i], false, invoer.vastgezet?.[i + vanafBlok])) continue
+            if (!isBlokTeBezetten(kandidaat[j], false, invoer.vastgezet?.[j + vanafBlok])) continue
+            if (dubbeleRustTelling(kandidaat, veldSpeelsters) > rustGrens) continue
+            if (parenOpMinimum(kandidaat, paren) > minimumGrens) continue
+            const proef = bouw(kandidaat)
+            if (schuifKosten(proef.blokken) >= kosten) continue
+            if (meldingen(proef.blokken) > grens) continue
+            if (drukstePiek(proef.blokken) > piekGrens) continue
+            velden = kandidaat
+            beter = proef
+            break
+          }
+          if (beter) break
+        }
+      }
+    }
+    if (!beter) break
+    uitkomst = beter
+  }
 
   const { blokken, ctx } = uitkomst
   const waarschuwingen: string[] = []
