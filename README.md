@@ -15,10 +15,18 @@ niet, dan toont de app een woordmerk **HCP** in de clubkleuren — geen gebroken
 plaatje. Als het logo er is, kun je ook `public/icon-192.png`, `icon-512.png` en
 `favicon.svg` eruit laten genereren.
 
-Kleuren: geel is bewust schaars gehouden. Het is de kleur van het wisselmoment
-en van het logo, en verder niet — anders valt het alarm langs de lijn niet meer
-op. Het veld blijft groen, want daarop lezen de shirtjes, de rode ERUIT-ring en
-de gele SCHUIFT-vlag het beste.
+Kleuren: marineblauw draagt alle vlakken, geel doet de clubkleur én de
+hoofdactie — *Verder*, *Start*, en wat aan staat. Het veld blijft groen, want
+daarop lezen de shirtjes, de rode ERUIT-ring en de gele SCHUIFT-vlag het beste.
+
+Omdat geel overal zit, kan het wisselmoment niet meer met een geel randje
+opvallen. Die kaart heeft daarom een vol geel kopvlak, en bij een rustwissel is
+dat vlak groen — aan de kleur alleen zie je al of je haast hebt. Alle
+tekst-op-vlak-combinaties in het palet halen WCAG AA.
+
+De app-iconen komen uit `scripts/iconen.py`, dezelfde tekening als de favicon.
+Verandert het palet, dan draai je dat script opnieuw; met de hand nagemaakte
+iconen lopen anders bij elke kleurwijziging achter.
 
 ## Hoe het rekent
 
@@ -62,14 +70,26 @@ Lily, Nora en Lynn zitten in beide pools en zijn daarmee de scharnierpunten van
 het rooster. Cato kan wel centraal, maar speelt alleen aanval — en de voorhoede
 kent geen sleutelpositie, dus zij staat op LA, SP of RA.
 
-Die pools zijn krap, dus je kunt ze zelf aanvullen: op het aanwezigheidsscherm
-staat achter elke naam een knop **centraal**. Zet je die aan bij Kate Janssen,
-dan kan zij er ook op laatste vrouw en centrale verdediger staan. Wat het per
-speelster oplevert hangt af van haar linies — bij Cato is de knop uitgeschakeld,
-want in de aanval zit geen centrale sleutelpositie. Een teller boven de lijst laat
-live zien hoeveel speelsters er achterin en op het middenveld centraal kunnen, en
-waarschuwt als dat er te weinig zijn. De wijziging blijft bewaard voor volgende
-wedstrijden; er is een knop om terug te zetten naar de oorspronkelijke selectie.
+Die pools zijn krap, dus je kunt ze zelf aanvullen. Op het aanwezigheidsscherm
+heeft elke speelster een kaartje met twee rijen knoppen:
+
+- **linie** — Verdediging, Middenveld, Aanval. Hiermee bepaal je waar iemand kan
+  staan. Haar laatste linie kun je niet weghalen: zonder linie kan ze nergens
+  spelen.
+- **centraal** — de centrale plek *binnen* een linie die ze speelt: *achterin*
+  voor laatste vrouw en centrale verdediger, *midden* voor centrale middenveld.
+  Bij Cato ontbreekt deze rij, want in de aanval zit geen sleutelpositie.
+
+De twee zijn zonder lezen uit elkaar te houden: linies zijn rustig (omlijnd),
+centraal is luid (een eigen kader met gele zijstreep, en een vol geel vlak als
+het aan staat). Staat het uit maar kan het wel, dan is de knop gestippeld — zo
+zie je in één blik wie je er nog bij kunt zetten.
+
+Haal je een linie weg, dan vervalt de centraal-knop die erbij hoorde: "centraal
+op het middenveld" betekent niets meer zodra ze het middenveld niet speelt.
+
+Alles blijft bewaard voor volgende wedstrijden; onder *Opnieuw beginnen* staat
+een knop om terug te zetten naar de oorspronkelijke selectie.
 
 ## Hoe het rooster tot stand komt
 
@@ -100,8 +120,28 @@ speelster die doorschuift; en pas als dat ook niet kan met meer — en dan krijg
 het te zien. Ook de rustrotatie kijkt vooruit: bij speelsters met dezelfde
 speeltijd kiest de app degene wier vervanger direct op haar plek kan.
 
-Over alle bezettingen en keeperkeuzes samen scheelt dat 605 → ~320 schuiven. De
+Over alle bezettingen en keeperkeuzes samen scheelt dat 605 → 97 schuiven. De
 speeltijd blijft daarbij overal binnen één blok.
+
+### En wat overblijft, gaat naar de rust
+
+Midden in een kwart loopt de klok en staat iedereen verspreid; in de rust staat
+de klok stil en sta je bij elkaar. Een schuif die je niet kwijt kunt, hoort dus
+op een kwartgrens.
+
+Een naverwerkingsstap verhuist ze daarheen door bank- en veldplekken tussen twee
+blokken om te ruilen — dat laat ieders speeltijd exact gelijk (A speelt blok j in
+plaats van blok i, B andersom). Elke kandidaat wordt met de echte roosterbouwer
+beoordeeld, dus wat gemeten wordt is precies wat de leider te zien krijgt. Wat
+eerder is rechtgezet blijft daarbij overeind: een kandidaat die meer meldingen
+oplevert, iemand twee blokken op rij op de bank zet, een paar terugduwt naar zijn
+samenspel-minimum of meer schuiven op één overgang samenklontert, wordt niet
+genomen.
+
+Van de 97 schuiven vallen er nog **20 midden in een kwart** en **77 in de rust**,
+en **94% van de kwarten** wordt schuifvrij uitgespeeld. Vóór deze stap was dat
+59% van de schuiven midden in een kwart, en werd 65% van de kwarten schuifvrij
+gespeeld.
 
 ### Samen spelen
 
@@ -111,9 +151,10 @@ de een speelde, rustte de ander. Bij acht van de twaalf blokken elk stonden ze
 dan maar vier blokken samen in het veld — het rekenkundige minimum.
 
 Een reparatiestap laat hun rustbeurten samenvallen, waardoor ze acht blokken
-samen spelen en degene die niet centraal staat gewoon op links- of rechtsmid
-komt. Dat kost wel doorschuiven: van 140 naar ~320 over alle bezettingen samen.
-Wil je die afruil anders, dan is `MAX_SAMENSPEL_RUILEN` in `schedule.ts` de knop.
+samen spelen — het maximum — en degene die niet centraal staat gewoon op links-
+of rechtsmid komt. Dat kostte aanvankelijk doorschuiven, maar de stap hierboven
+haalt dat er weer uit. Wil je die afruil anders, dan is `MAX_SAMENSPEL_RUILEN` in
+`schedule.ts` de knop.
 
 Eerlijk over een beperking: de sterkte-volgorde voor de centrale posities stuurt
 hierdoor bijna niets meer. Gelijke speeltijd, blijven staan waar je stond en
@@ -142,8 +183,14 @@ ook zonder bereik langs het veld.
 Bij het wisselmoment gaat er een belletje af (plus trillen) en verschijnt de
 wissel in de vorm waarin je hem roept: *"Nora, jij komt erin voor Eva Hoevers."*
 
-De wissel op een kwartgrens heet een **rustwissel** en krijgt een eigen kaart:
-de klok staat dan stil, dus dat is het rustigste moment om te wisselen.
+De wissel op een kwartgrens heet een **rustwissel** en krijgt een eigen kaart met
+een groen kopvlak: de klok staat dan stil, dus dat is het rustigste moment om te
+wisselen.
+
+In de rust kijkt het wedstrijdscherm vooruit. Boven het veld staat *"Opstelling
+voor kwart 2"* en je ziet de opstelling die gáát komen, niet die van het kwart dat
+net voorbij is. Tik je daar een plek aan, dan bevriest de app het gespeelde kwart
+en rekent de rest van de wedstrijd om je keuze heen.
 
 Moet er toch iemand doorschuiven, dan staat de hele ketting op één kaart, zodat
 niemand per ongeluk het veld af loopt:
@@ -186,10 +233,11 @@ Het aanwezigheidsscherm toont dit live. Onder het **minimum** (precies de plekke
 die gevuld moeten worden) kun je niet verder — dan komt het schema niet rond.
 Tussen minimum en advies mag je door, met een melding erbij.
 
-Het verschil tussen de twee soorten groepen is belangrijk. **De centrale groepen
-kun je oplossen** met de centraal-knop, dus de app noemt concreet wie je met één
-tik kunt aanzetten. **De linies kun je niet oplossen** — die volgen uit wie er
-die zaterdag is; daar zegt de app alleen wat het gevolg wordt.
+Het verschil tussen de twee soorten groepen zit in hoe je ze oplost. Bij een
+**centrale groep** noemt de app concreet wie je met één tik kunt aanzetten. Bij
+een **linie** kan dat niet met één tik — wie welke linie kan is een keuze over de
+speelster zelf, niet over deze wedstrijd — dus daar wijst de app naar de
+linie-knoppen in de lijst en zegt wat het gevolg is als je niets doet.
 
 Het advies is een sterke indicatie, geen garantie: het telt per groep, en wie
 twee linies speelt telt twee keer mee terwijl ze maar op één plek tegelijk kan
@@ -232,8 +280,21 @@ Twee dingen zorgen dat je altijd verder kunt:
   voorbereidingsschermen onbereikbaar.
 - **Vanaf het wedstrijdscherm kun je terug** met *Wijzig opstelling*, zonder de
   wedstrijd weg te gooien. Op het aanwezigheidsscherm staat dan *Terug naar de
-  lopende wedstrijd*. `Opnieuw` blijft bestaan voor als je écht schoon wilt
-  beginnen.
+  lopende wedstrijd*.
+
+Onderaan het aanwezigheidsscherm staat **Opnieuw beginnen**, met drie acties die
+elk zeggen wat er weggaat:
+
+| | wat gaat weg | wat blijft |
+| --- | --- | --- |
+| **Nieuwe wedstrijd** | keeper, opstelling, klok | wie er zijn, linies, centraal |
+| **Linies en centraal terugzetten** | alleen de selectie-aanpassingen | de wedstrijd |
+| **Alles wissen** | alles, ook de opgeslagen stand | niets |
+
+Die scheiding is met opzet: linies en centrale posities horen bij het team en
+niet bij één wedstrijd, dus een nieuwe wedstrijd raakt ze niet aan. *Alles
+wissen* is ook de uitweg als er ooit iets in de opslag staat waar de app niet
+mee overweg kan.
 
 ## Ontwikkelen
 
@@ -276,5 +337,8 @@ plek aankan. Dat is per linie, want dat verschilt echt — iemand kan prima laat
 vrouw zijn zonder dat ze het centrale middenveld aankan. Alleen linies die ze ook
 speelt tellen mee, en de aanval heeft geen centrale sleutelplek.
 
-De centraal-vlag kun je ook in de app zelf aanzetten; die wijziging wordt lokaal
-bewaard. Alleen voor het aanpassen van linies moet je dit bestand in.
+Zowel de linies als de centraal-vlag kun je in de app zelf aanpassen; die
+wijzigingen worden lokaal bewaard en overleven een nieuwe wedstrijd. Dit bestand
+is de standaard waar *Alles wissen* naar terugvalt — daar hoef je dus alleen in
+als de vaste selectie zelf verandert, bijvoorbeeld als er iemand bij het team
+komt.
