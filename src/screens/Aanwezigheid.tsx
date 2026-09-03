@@ -1,5 +1,6 @@
+import { bezettingsAdvies, heeftTekort, type GroepAdvies } from '../domain/bezetting'
 import { LINIE_NAAM, positieInfo } from '../domain/formation'
-import { centraalHeeftZin, magOpPositie, sleutelPositiesVoor, type Speelster } from '../domain/players'
+import { centraalHeeftZin, sleutelPositiesVoor, type Speelster } from '../domain/players'
 import { SELECTIE } from '../domain/players'
 import { controleerBezetting } from '../domain/schedule'
 import { Kop } from '../components/Kop'
@@ -29,6 +30,70 @@ function centraalUitleg(speelster: Speelster): string {
     : `Zet aan als ${speelster.naam} ook op ${namen} kan staan.`
 }
 
+/**
+ * Hoe staat de bezetting ervoor, per positiegroep?
+ *
+ * De twee centrale groepen kun je oplossen met de centraal-knop, dus daar noemt
+ * de app wie. De linies volgen uit wie er is en zijn niet met een knop te
+ * repareren; daar zegt de app alleen wat het gevolg wordt, zodat je niet
+ * verrast wordt door een oranje randje tijdens de wedstrijd.
+ */
+function Bezettingstabel({
+  advies,
+  onCentraal,
+}: {
+  advies: GroepAdvies[]
+  onCentraal: (id: string, aan: boolean) => void
+}) {
+  const teKort = advies.filter((g) => g.status !== 'goed')
+
+  return (
+    <section className="bezetting">
+      <h2>Bezetting</h2>
+      <ul className="bezetting-lijst">
+        {advies.map((groep) => (
+          <li key={groep.sleutel} className={`bezetting-rij ${groep.status}`}>
+            <span className="bezetting-naam">
+              {groep.naam}
+              <em>{groep.toelichting}</em>
+            </span>
+            <span className="bezetting-cijfers">
+              <strong>{groep.aanwezig}</strong>
+              <span className="van">van {groep.advies}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {teKort.map((groep) => (
+        <p
+          key={groep.sleutel}
+          className={`melding ${groep.status === 'tekort' ? 'waarschuwing' : 'krap'}`}
+        >
+          <strong>{groep.naam}:</strong>{' '}
+          {groep.status === 'tekort'
+            ? `${groep.aanwezig} van de ${groep.minimum} die je minimaal nodig hebt.`
+            : `${groep.aanwezig} van de ${groep.advies}. Werkt wel, maar zij kunnen bijna nooit rusten.`}{' '}
+          {groep.aanTeVullen.length > 0 ? (
+            <>
+              Zet centraal aan bij:{' '}
+              <span className="aanvul-knoppen">
+                {groep.aanTeVullen.map((s) => (
+                  <button key={s.id} className="knop mini" onClick={() => onCentraal(s.id, true)}>
+                    {s.naam}
+                  </button>
+                ))}
+              </span>
+            </>
+          ) : (
+            <em>Dit volgt uit wie er is — er komt straks iemand buiten haar linie te staan.</em>
+          )}
+        </p>
+      ))}
+    </section>
+  )
+}
+
 export function Aanwezigheid({
   selectie, aanwezig, onWissel, onAlle, onCentraal, onHerstelSelectie, onVerder,
 }: Props) {
@@ -40,13 +105,10 @@ export function Aanwezigheid({
 
   // Wie kan er straks centraal? De keeper is nog niet bekend, dus dit telt over
   // alle aanwezigen -- op het keeperscherm wordt het opnieuw nagerekend.
-  const achterin = aanwezigen.filter((s) => magOpPositie(s, 'LV')).length
-  const middenveld = aanwezigen.filter((s) => magOpPositie(s, 'CM')).length
-  // Twee plekken achterin, één op het middenveld. Zit je daar precies op, dan
-  // kan er niemand van hen ooit rusten -- dat is nog geen fout, maar wel het
-  // moment om er iemand bij te zetten.
-  const teWeinigCentraal = achterin < 2 || middenveld < 1
-  const krapCentraal = achterin === 2 || middenveld === 1
+  // De keeper is hier nog niet bekend; het keeperscherm rekent het daarna exact
+  // na. Dit geeft alvast het beeld over de hele groep.
+  const advies = bezettingsAdvies(aanwezigen, null)
+  const tekort = heeftTekort(advies)
   const gewijzigd = selectie.some((s) => s.centraal !== OORSPRONKELIJK.get(s.id))
 
   return (
@@ -57,16 +119,11 @@ export function Aanwezigheid({
         <p className="tel">
           <strong>{aanwezigen.length}</strong> van {selectie.length} aanwezig
         </p>
-        <p
-          className={`centraal-tel ${teWeinigCentraal ? 'tekort' : krapCentraal ? 'krap' : ''}`}
-        >
-          Centraal inzetbaar: <strong>achterin {achterin}</strong> ·{' '}
-          <strong>middenveld {middenveld}</strong>
-          {teWeinigCentraal && <em> — te weinig, zet er iemand bij</em>}
-          {!teWeinigCentraal && krapCentraal && (
-            <em> — precies genoeg, zij kunnen dan nooit rusten</em>
-          )}
-        </p>
+      </header>
+
+      {!teWeinig && <Bezettingstabel advies={advies} onCentraal={onCentraal} />}
+
+      <header className="scherm-kop">
       </header>
 
       <div className="knoppenrij">
@@ -133,9 +190,14 @@ export function Aanwezigheid({
         </button>
       )}
 
-      <button className="knop groot" disabled={teWeinig} onClick={onVerder}>
+      <button className="knop groot" disabled={teWeinig || tekort} onClick={onVerder}>
         Verder: keeper kiezen
       </button>
+      {!teWeinig && tekort && (
+        <p className="tel">
+          Los eerst het tekort op — met deze bezetting komt het schema niet rond.
+        </p>
+      )}
     </div>
   )
 }

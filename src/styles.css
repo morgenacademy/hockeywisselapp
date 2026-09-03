@@ -491,3 +491,32 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .rustkop h2 { color: var(--erin); margin: 0; }
 .vooruitblik.rust { border-color: var(--erin); }
 .vooruitblik.rust h2 { color: var(--erin); }
+
+/* --- bezetting per positiegroep --- */
+.bezetting { display: flex; flex-direction: column; gap: 8px; }
+.bezetting-lijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.bezetting-rij {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--paneel);
+  border: 1px solid var(--rand);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+}
+.bezetting-rij.goed { border-left-color: var(--erin); }
+.bezetting-rij.krap { border-left-color: #d8b45f; }
+.bezetting-rij.tekort { border-left-color: var(--waarschuwing); }
+.bezetting-naam { display: flex; flex-direction: column; font-size: 0.9rem; font-weight: 600; }
+.bezetting-naam em { font-style: normal; font-size: 0.75rem; font-weight: 400; color: var(--tekst-zacht); }
+.bezetting-cijfers { display: flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.bezetting-cijfers strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.bezetting-rij.goed .bezetting-cijfers strong { color: var(--erin); }
+.bezetting-rij.krap .bezetting-cijfers strong { color: #d8b45f; }
+.bezetting-rij.tekort .bezetting-cijfers strong { color: var(--waarschuwing); }
+.bezetting-cijfers .van { font-size: 0.78rem; color: var(--tekst-zacht); }
+.melding.krap { background: #2b2410; border-color: #d8b45f; color: #f2e0b0; }
+.aanvul-knoppen { display: inline-flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.aanvul-knoppen .knop.mini { font-size: 0.8rem; padding: 5px 9px; }

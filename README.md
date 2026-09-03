@@ -160,6 +160,42 @@ Tijdens de wedstrijd kun je altijd ingrijpen: tik op een speelster op het veld o
 haar te vervangen, of zet iemand op **eruit** bij een blessure of kaart. De app
 rekent de rest van de wedstrijd opnieuw uit; wat al gespeeld is blijft staan.
 
+## Hoeveel speelsters heb je nodig per positie?
+
+Een positiegroep die **k plekken per blok** moet vullen heeft bij **V**
+veldspeelsters minstens **k × V / 10** speelsters nodig — haar eigen aandeel van
+de selectie. Vier van de tien plekken achterin? Dan minstens vier tiende van je
+veldspeelsters.
+
+Daar komt één eis bij: wil je dat er twee tegelijk kunnen rusten — en dus de rest
+van de wedstrijd sámen spelen — dan moeten er na hun rust nog k overblijven, dus
+**k + 2**. Zonder die marge ontwijken hun rustbeurten elkaar en staan ze nooit
+samen in het veld.
+
+Voor 16 aanwezig (15 veldspeelsters):
+
+| Groep | Plekken | Advies | In de selectie |
+| --- | --- | --- | --- |
+| Laatste vrouw + centrale verdediger | 2 | 4 | 5 |
+| Centrale middenveld | 1 | 3 | 4 |
+| Verdediging | 4 | 6 | 8 |
+| Middenveld | 3 | 5 | 11 |
+| Aanval | 3 | 5 | 10 |
+
+Het aanwezigheidsscherm toont dit live. Onder het **minimum** (precies de plekken
+die gevuld moeten worden) kun je niet verder — dan komt het schema niet rond.
+Tussen minimum en advies mag je door, met een melding erbij.
+
+Het verschil tussen de twee soorten groepen is belangrijk. **De centrale groepen
+kun je oplossen** met de centraal-knop, dus de app noemt concreet wie je met één
+tik kunt aanzetten. **De linies kun je niet oplossen** — die volgen uit wie er
+die zaterdag is; daar zegt de app alleen wat het gevolg wordt.
+
+Het advies is een sterke indicatie, geen garantie: het telt per groep, en wie
+twee linies speelt telt twee keer mee terwijl ze maar op één plek tegelijk kan
+staan. Gemeten over alle bezettingen en keeperkeuzes levert het in 62 van de 63
+gevallen een schema zonder linieproblemen op.
+
 ## Oefenwedstrijd (alleen in de testversie)
 
 Om de app te beoordelen zonder 70 minuten te wachten is er een oefenmodus: een
