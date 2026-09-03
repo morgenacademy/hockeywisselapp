@@ -61,16 +61,14 @@ export function SubOverlay({ blokNummer, kwart, rustwissel, ketens, naam, onKlaa
   return (
     <div className="overlay" role="dialog" aria-label={rustwissel ? 'Rustwissel' : 'Wisselmoment'}>
       <div className={`overlay-kaart ${rustwissel ? 'rustwissel' : ''}`}>
-        {rustwissel ? (
-          <header className="rustkop">
-            <h2>Rustwissel</h2>
-            <p className="tel">
-              Kwart {kwart} begint zo. De klok staat stil, dus je hebt de tijd.
-            </p>
-          </header>
-        ) : (
-          <h2>Wisselen — blok {blokNummer}</h2>
-        )}
+        {/* Een vol geel kopvlak in plaats van een gele rand. Nu de hele app in
+            clubkleuren staat valt een randje niet meer op; een vlak wel. */}
+        <header className="wisselkop">
+          <h2>{rustwissel ? 'Rustwissel' : `Wisselen — blok ${blokNummer}`}</h2>
+          {rustwissel && (
+            <p>Kwart {kwart} begint zo. De klok staat stil, dus je hebt de tijd.</p>
+          )}
+        </header>
 
         {ketens.length === 0 ? (
           <p className="tel">Geen wissels: iedereen blijft staan.</p>

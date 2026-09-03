@@ -2,23 +2,32 @@
  * Ontworpen voor gebruik langs de lijn: grote raakvlakken, hoog contrast,
  * en alles wat er tijdens een wissel toe doet meteen in beeld.
  *
- * De huisstijl van HC Prinsenbeek is kanariegeel op marineblauw. Marineblauw
- * doet al het chrome-werk; geel blijft schaars, want het is óók de kleur van
- * het wisselmoment. Zou elk paneel geel zijn, dan valt het alarm niet meer op.
+ * De huisstijl van HC Prinsenbeek is kanariegeel op marineblauw, en zo ziet de
+ * app er ook uit: marineblauw draagt alle vlakken, geel doet de clubkleur én de
+ * hoofdactie -- Verder, Start, en wat aan staat.
  *
- * Groen betekent twee dingen en dat blijft zo: het speelvlak, en "gaat door"
- * (Start, erin, aanwezig).
+ * Dat geel nu overal zit, betekent dat het wisselmoment iets anders nodig heeft
+ * om op te vallen. Een gele rand valt niet meer op tussen gele knoppen. Daarom
+ * krijgt de wisselkaart een vol geel kopvlak: geen accent maar een vlak, en dat
+ * werkt ook naast alle andere gele dingen.
+ *
+ * Groen is er nog voor twee dingen: het speelvlak, en "erin" bij een wissel.
+ * Rood is "eruit". Die drie moeten los van de huisstijl leesbaar blijven.
  */
 
 :root {
-  /* Huisstijl */
-  --achtergrond: #0b1626;
-  --paneel: #132741;
-  --paneel-licht: #1b3455;
-  --rand: #2b4a70;
-  --tekst: #eef3f9;
-  --tekst-zacht: #9fb4cc;
-  --accent: #f7c600;
+  /* Huisstijl: kanariegeel op marineblauw */
+  --achtergrond: #08152c;
+  --paneel: #10284f;
+  --paneel-licht: #1a3a68;
+  --rand: #2d5892;
+  --tekst: #f2f6fb;
+  --tekst-zacht: #a8c0dc;
+  --accent: #ffd400;
+  --accent-donker: #d9b400;
+  /* Tekst óp geel: het diepe marineblauw, want dat is het enige dat op deze
+     gele tint genoeg contrast geeft. */
+  --op-accent: #08152c;
 
   /* Signalen -- bewust niet in clubkleuren, die moeten los leesbaar blijven */
   --gras: #1b7a4b;
@@ -76,15 +85,24 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .knop:active { transform: translateY(1px); }
 .knop:disabled { opacity: 0.4; cursor: not-allowed; }
+/* De hoofdactie in de clubkleur: geel vlak, marineblauwe tekst. Dat is het
+   hoogste contrast dat dit palet heeft, en het is meteen onmiskenbaar HCP. */
 .knop.groot {
   font-size: 1.15rem;
   font-weight: 700;
   padding: 16px;
-  background: var(--gras);
-  border-color: var(--gras-donker);
+  background: var(--accent);
+  border-color: var(--accent-donker);
+  color: var(--op-accent);
   flex: 1;
 }
-.knop.groot.pauze { background: #8a5a12; border-color: #6b460e; }
+.knop.groot:disabled { opacity: 0.35; }
+/* Pauze is geen doorgaande actie, dus geen clubkleur maar een gedempt vlak. */
+.knop.groot.pauze {
+  background: var(--paneel-licht);
+  border-color: var(--rand);
+  color: var(--tekst);
+}
 .knop.klein { padding: 10px 14px; font-size: 0.9rem; }
 .knop.mini { padding: 4px 8px; font-size: 0.85rem; line-height: 1; }
 .knop.gevaar { color: #fca5a5; }
@@ -112,9 +130,9 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
    speeltijdlijst zijn eigen kolomindeling houdt. */
 .rij .rij-naam { grid-column: 2; }
 .rij .rij-info { grid-column: 2; text-align: left; }
-.rij.aan { background: var(--paneel-licht); border-color: var(--gras); }
+.rij.aan { background: var(--paneel-licht); border-color: var(--accent); }
 .rij.uit { opacity: 0.55; }
-.vink { color: var(--erin); font-weight: 700; text-align: center; }
+.vink { color: var(--accent); font-weight: 700; text-align: center; }
 .rij-naam { font-weight: 600; }
 .rij-info { color: var(--tekst-zacht); font-size: 0.78rem; }
 .rij-info em { color: var(--accent); font-style: normal; }
@@ -236,7 +254,7 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   align-items: center;
   gap: 6px;
 }
-.chip.eigen { border-color: var(--gras); }
+.chip.eigen { border-color: var(--accent); }
 .chip.anders { opacity: 0.75; border-style: dashed; }
 .chip.verboden { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; }
 .chip em { font-style: normal; color: var(--tekst-zacht); font-size: 0.72rem; }
@@ -281,7 +299,7 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .speeltijd li.uitgevallen { opacity: 0.4; text-decoration: line-through; }
 .balk { background: var(--paneel-licht); border-radius: 4px; height: 8px; overflow: hidden; }
-.balk span { display: block; height: 100%; background: var(--gras); }
+.balk span { display: block; height: 100%; background: var(--accent); }
 .minuten { font-variant-numeric: tabular-nums; color: var(--tekst-zacht); text-align: right; }
 
 /* --- overlay --- */
@@ -297,9 +315,10 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .overlay-kaart {
   background: var(--paneel);
-  border: 2px solid var(--accent);
+  border: 1px solid var(--rand);
   border-radius: 16px;
-  padding: 20px;
+  padding: 0 20px 20px;
+  overflow: hidden;
   width: 100%;
   max-width: 460px;
   max-height: 90vh;
@@ -308,7 +327,17 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   flex-direction: column;
   gap: 14px;
 }
-.overlay-kaart h2 { font-size: 1.4rem; margin: 0; color: var(--accent); }
+/* Het kopvlak loopt tot de rand van de kaart door, vandaar de negatieve marge
+   tegen de padding van de kaart in. */
+.wisselkop {
+  margin: 0 -20px 0;
+  padding: 16px 20px;
+  background: var(--accent);
+  color: var(--op-accent);
+}
+.wisselkop h2 { font-size: 1.4rem; margin: 0; color: var(--op-accent); }
+.wisselkop p { margin: 4px 0 0; font-size: 0.9rem; color: var(--op-accent); opacity: 0.8; }
+.overlay-kaart h2 { font-size: 1.4rem; margin: 0; }
 .wissellijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .wissellijst li {
   display: flex;
@@ -456,52 +485,53 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 
 /* --- aanwezigheid: afvinken en centraal staan los van elkaar --- */
-.rij-groep { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; }
-.rij-groep .rij { border-radius: var(--radius); }
-/* Eén knop per linie waarin een centrale plek zit. */
-.centraal-knoppen {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  justify-content: center;
-}
-.centraal-knop {
-  font: inherit;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  width: 80px;
-  padding: 6px 4px;
-  border-radius: var(--radius);
+/* Eén kaartje per speelster: naam bovenin (dat is de aanwezig-knop en die moet
+   snel te raken zijn), de instellingen eronder. Naast elkaar werd het te druk:
+   drie linies plus twee centraal-knoppen passen niet naast een naam op een
+   telefoon zonder dat alles te klein wordt. */
+.speelster-kaart {
   border: 1px solid var(--rand);
+  border-radius: var(--radius);
   background: var(--paneel);
+  overflow: hidden;
+}
+.speelster-kaart .rij { border: 0; border-radius: 0; background: transparent; }
+.speelster-kaart .rij.aan { background: var(--paneel-licht); box-shadow: inset 3px 0 0 var(--accent); }
+.instellingen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--rand);
+}
+.instel-groep { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.instel-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tekst-zacht);
+  margin-right: 2px;
+}
+.chip-knop {
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--rand);
+  background: transparent;
   color: var(--tekst-zacht);
   cursor: pointer;
   touch-action: manipulation;
 }
-/* Bewust geen vol geel vlak: met zeven aangezette knoppen onder elkaar zou het
-   scherm geel worden en verliest het wisselmoment zijn signaal. */
-.centraal-knop.aan {
-  background: var(--paneel-licht);
+.chip-knop.aan {
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--op-accent);
 }
-.centraal-knop.niet {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.3;
-  cursor: default;
-}
-.centraal-tel { margin: 6px 0 0; font-size: 0.85rem; color: var(--tekst-zacht); }
-.centraal-tel strong { color: var(--tekst); font-weight: 700; }
-.centraal-tel.krap { color: #d8b45f; }
-.centraal-tel.krap strong { color: #d8b45f; }
-.centraal-tel.tekort { color: var(--waarschuwing); font-weight: 600; }
-.centraal-tel.tekort strong { color: var(--waarschuwing); }
-.centraal-tel em { font-style: normal; }
+/* Haar laatste linie: zichtbaar aan, maar niet weg te halen. */
+.chip-knop:disabled { cursor: not-allowed; opacity: 0.75; }
 
 /* --- kopbalk met clublogo --- */
 .kop {
@@ -536,10 +566,11 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 
 
-/* --- rustwissel: het makkelijkste wisselmoment, dus eigen kop --- */
-.overlay-kaart.rustwissel { border-color: var(--erin); }
-.rustkop { display: flex; flex-direction: column; gap: 4px; }
-.rustkop h2 { color: var(--erin); margin: 0; }
+/* --- rustwissel: het makkelijkste wisselmoment, dus eigen kleur ---
+   Groen, want de klok staat stil: dit is het moment waarop alles kan. Het
+   kopvlak wisselt dan van clubgeel naar groen, zodat je aan de kleur alleen al
+   ziet of je haast hebt. */
+.overlay-kaart.rustwissel .wisselkop { background: var(--erin); }
 .vooruitblik.rust { border-color: var(--erin); }
 .vooruitblik.rust h2 { color: var(--erin); }
 

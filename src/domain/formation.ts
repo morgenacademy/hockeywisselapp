@@ -9,6 +9,9 @@
 
 export type Linie = 'V' | 'M' | 'A'
 
+/** Van achter naar voren; bepaalt de volgorde waarin linies getoond worden. */
+export const LINIES: Linie[] = ['V', 'M', 'A']
+
 export const LINIE_NAAM: Record<Linie, string> = {
   V: 'Verdediging',
   M: 'Middenveld',

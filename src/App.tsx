@@ -46,6 +46,7 @@ export default function App() {
         }
         onAlle={(aan) => wijzig({ aanwezig: aan ? stand.selectie.map((s) => s.id) : [], keeperId: null })}
         onCentraal={w.zetCentraal}
+        onLinie={w.zetLinie}
         onHerstelSelectie={w.herstelSelectie}
         onNieuweWedstrijd={w.herstart}
         onWisAlles={w.wisAlles}

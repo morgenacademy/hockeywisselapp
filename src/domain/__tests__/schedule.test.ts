@@ -381,6 +381,59 @@ describe('onvulbare bezetting', () => {
   })
 })
 
+describe('linies vooraf aanpassen', () => {
+  /**
+   * De knoppen op het aanwezigheidsscherm passen `linies` aan; het rooster
+   * hoeft daar niets voor te weten, want het leest die lijst al. Deze test legt
+   * dat contract vast: verandert de lijst, dan verandert het rooster mee.
+   */
+  it('laat een speelster achterin spelen zodra je die linie aanzet', () => {
+    // Kiki speelt middenveld en aanval, dus achterin hoort ze niet thuis.
+    expect(inLinie(speelster('p02'), 'LB')).toBe(false)
+
+    const metKiki = SELECTIE.map((s) =>
+      s.id === 'p02' ? { ...s, linies: ['V' as const, 'M' as const, 'A' as const] } : s,
+    )
+    const kiki = metKiki.find((s) => s.id === 'p02')!
+    expect(inLinie(kiki, 'LB')).toBe(true)
+
+    // En dan komt ze in een rooster ook echt achterin te staan, zonder dat er
+    // een "buiten haar linie"-melding voor nodig is.
+    const zonderVerdedigers = metKiki.filter(
+      (s) => !['p03', 'p06', 'p16'].includes(s.id) && s.id !== 'p11',
+    )
+    const r = maakRooster({
+      aanwezigen: zonderVerdedigers,
+      keeperId: 'p12',
+      sterkteAchter: zonderVerdedigers
+        .filter((s) => s.id !== 'p12' && magOpPositie(s, 'LV'))
+        .map((s) => s.id),
+      sterkteMidden: zonderVerdedigers
+        .filter((s) => s.id !== 'p12' && magOpPositie(s, 'CM'))
+        .map((s) => s.id),
+    })
+    const achterin: Positie[] = ['LB', 'LV', 'CV', 'RB']
+    const stondAchterin = r.blokken.some((blok) =>
+      achterin.some((positie) => blok.opstelling[positie] === 'p02'),
+    )
+    expect(stondAchterin).toBe(true)
+  })
+
+  it('houdt haar buiten een linie die je weghaalt', () => {
+    // Lynn speelt normaal alle drie de linies.
+    expect(inLinie(speelster('p15'), 'LM')).toBe(true)
+
+    const zonderMidden = SELECTIE.map((s) =>
+      s.id === 'p15' ? { ...s, linies: ['V' as const, 'A' as const], centraal: ['V' as const] } : s,
+    )
+    const lynn = zonderMidden.find((s) => s.id === 'p15')!
+    expect(inLinie(lynn, 'LM')).toBe(false)
+    // En daarmee vervalt ook haar centrale middenveld, ook al zou de vlag er nog staan.
+    expect(magOpPositie(lynn, 'CM')).toBe(false)
+    expect(magOpPositie(lynn, 'LV')).toBe(true)
+  })
+})
+
 describe('centraal vooraf aanzetten', () => {
   it('weet per speelster welke sleutelposities de vlag ontgrendelt', () => {
     expect(sleutelPositiesVoor(speelster('p05'))).toEqual(['LV', 'CV']) // Kate: alleen verdediging

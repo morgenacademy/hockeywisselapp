@@ -1,13 +1,15 @@
 import { bezettingsAdvies, heeftTekort, type GroepAdvies } from '../domain/bezetting'
 import type { Linie } from '../domain/formation'
-import { LINIE_NAAM } from '../domain/formation'
+import { LINIES, LINIE_NAAM } from '../domain/formation'
 import { centraalLinies, kanCentraal, type Speelster } from '../domain/players'
 import { SELECTIE } from '../domain/players'
 import { controleerBezetting } from '../domain/schedule'
 import { Kop } from '../components/Kop'
 
-/** De centraal-vlaggen zoals ze in de selectie staan, om te zien of er iets is aangepast. */
-const OORSPRONKELIJK = new Map(SELECTIE.map((s) => [s.id, s.centraal.join(',')]))
+/** Linies én centraal-vlaggen zoals ze in de selectie staan, om te zien of er iets is aangepast. */
+const OORSPRONKELIJK = new Map(
+  SELECTIE.map((s) => [s.id, `${s.linies.join(',')}|${s.centraal.join(',')}`]),
+)
 
 interface Props {
   selectie: Speelster[]
@@ -15,6 +17,7 @@ interface Props {
   onWissel: (id: string) => void
   onAlle: (aan: boolean) => void
   onCentraal: (id: string, linie: Linie, aan: boolean) => void
+  onLinie: (id: string, linie: Linie, aan: boolean) => void
   onHerstelSelectie: () => void
   /** Wist de wedstrijd; selectie en centrale posities blijven staan. */
   onNieuweWedstrijd: () => void
@@ -43,9 +46,10 @@ function centraalUitleg(speelster: Speelster, linie: Linie): string {
  * Hoe staat de bezetting ervoor, per positiegroep?
  *
  * De twee centrale groepen kun je oplossen met de centraal-knop, dus daar noemt
- * de app wie. De linies volgen uit wie er is en zijn niet met een knop te
- * repareren; daar zegt de app alleen wat het gevolg wordt, zodat je niet
- * verrast wordt door een oranje randje tijdens de wedstrijd.
+ * de app wie. Bij een linie kan dat niet met één tik -- wie welke linie kan is
+ * een keuze over de speelster zelf, niet over deze wedstrijd -- dus daar wijst
+ * de app naar de linie-knoppen in de lijst en zegt wat het gevolg is als je
+ * niets doet.
  */
 function Bezettingstabel({
   advies,
@@ -99,7 +103,10 @@ function Bezettingstabel({
               </span>
             </>
           ) : (
-            <em>Dit volgt uit wie er is — er komt straks iemand buiten haar linie te staan.</em>
+            <em>
+              Zet hieronder in de lijst deze linie aan bij iemand die het aankan,
+              of speel door: er komt dan straks iemand buiten haar linie te staan.
+            </em>
           )}
         </p>
       ))}
@@ -108,7 +115,7 @@ function Bezettingstabel({
 }
 
 export function Aanwezigheid({
-  selectie, aanwezig, onWissel, onAlle, onCentraal, onHerstelSelectie,
+  selectie, aanwezig, onWissel, onAlle, onCentraal, onLinie, onHerstelSelectie,
   onNieuweWedstrijd, onWisAlles, onVerder,
   onTerugNaarWedstrijd,
 }: Props) {
@@ -124,7 +131,9 @@ export function Aanwezigheid({
   // na. Dit geeft alvast het beeld over de hele groep.
   const advies = bezettingsAdvies(aanwezigen, null)
   const tekort = heeftTekort(advies)
-  const gewijzigd = selectie.some((s) => s.centraal.join(',') !== OORSPRONKELIJK.get(s.id))
+  const gewijzigd = selectie.some(
+    (s) => `${s.linies.join(',')}|${s.centraal.join(',')}` !== OORSPRONKELIJK.get(s.id),
+  )
 
   return (
     <div className="scherm">
@@ -152,9 +161,11 @@ export function Aanwezigheid({
           // Eén knop per linie waarin een centrale plek zit én die zij speelt.
           // Voor een aanvalster blijft die lijst leeg: de voorhoede kent geen
           // centrale sleutelplek.
-          const linies = centraalLinies(speelster)
+          const centraalKnoppen = centraalLinies(speelster)
+          // Haar laatste linie mag er niet af: zonder linie kan ze nergens staan.
+          const laatste = speelster.linies.length <= 1
           return (
-            <li key={speelster.id} className="rij-groep">
+            <li key={speelster.id} className="speelster-kaart">
               <button
                 className={`rij ${aan ? 'aan' : 'uit'}`}
                 onClick={() => onWissel(speelster.id)}
@@ -162,41 +173,65 @@ export function Aanwezigheid({
               >
                 <span className="vink" aria-hidden>{aan ? '✓' : ''}</span>
                 <span className="rij-naam">{speelster.naam}</span>
-                <span className="rij-info">
-                  {speelster.linies.map((l) => LINIE_NAAM[l]).join(' / ')}
-                </span>
               </button>
-              <span className="centraal-knoppen">
-                {linies.length === 0 ? (
-                  <span
-                    className="centraal-knop niet"
-                    title={`${speelster.naam} speelt alleen aanval, en daar is geen centrale plek.`}
-                  >
-                    —
+
+              <div className="instellingen">
+                <span className="instel-groep">
+                  <span className="instel-label">linie</span>
+                  {LINIES.map((linie) => {
+                    const speelt = speelster.linies.includes(linie)
+                    const vast = speelt && laatste
+                    return (
+                      <button
+                        key={linie}
+                        className={`chip-knop ${speelt ? 'aan' : 'uit'}`}
+                        onClick={() => onLinie(speelster.id, linie, !speelt)}
+                        aria-pressed={speelt}
+                        disabled={vast}
+                        title={
+                          vast
+                            ? `${speelster.naam} moet minstens één linie houden, anders kan ze nergens staan.`
+                            : speelt
+                              ? `${speelster.naam} speelt ${LINIE_NAAM[linie].toLowerCase()}. Tik om dat weg te halen.`
+                              : `Zet aan als ${speelster.naam} ook ${LINIE_NAAM[linie].toLowerCase()} kan spelen.`
+                        }
+                      >
+                        {LINIE_NAAM[linie]}
+                      </button>
+                    )
+                  })}
+                </span>
+
+                {centraalKnoppen.length > 0 && (
+                  <span className="instel-groep">
+                    <span className="instel-label">centraal</span>
+                    {centraalKnoppen.map((linie) => (
+                      <button
+                        key={linie}
+                        className={`chip-knop ${kanCentraal(speelster, linie) ? 'aan' : 'uit'}`}
+                        onClick={() => onCentraal(speelster.id, linie, !kanCentraal(speelster, linie))}
+                        aria-pressed={kanCentraal(speelster, linie)}
+                        title={centraalUitleg(speelster, linie)}
+                      >
+                        {CENTRAAL_LABEL[linie].kort}
+                      </button>
+                    ))}
                   </span>
-                ) : (
-                  linies.map((linie) => (
-                    <button
-                      key={linie}
-                      className={`centraal-knop ${kanCentraal(speelster, linie) ? 'aan' : 'uit'}`}
-                      onClick={() => onCentraal(speelster.id, linie, !kanCentraal(speelster, linie))}
-                      aria-pressed={kanCentraal(speelster, linie)}
-                      title={centraalUitleg(speelster, linie)}
-                    >
-                      {CENTRAAL_LABEL[linie].kort}
-                    </button>
-                  ))
                 )}
-              </span>
+              </div>
             </li>
           )
         })}
       </ul>
 
       <p className="tel">
-        Per linie aan te zetten: <em>achterin</em> voor laatste vrouw en centrale verdediger,
-        <em>midden</em> voor centrale middenveld. Iemand kan prima achterin centraal staan
-        zonder dat ze het middenveld aankan. Blijft bewaard voor volgende wedstrijden.
+        <em>Linie</em> bepaalt waar iemand kan staan; je kunt er een toevoegen of
+        weghalen, zolang er één overblijft. <em>Centraal</em> gaat over de plek
+        binnen die linie: <em>achterin</em> voor laatste vrouw en centrale
+        verdediger, <em>midden</em> voor centrale middenveld. Iemand kan prima
+        achterin centraal staan zonder dat ze het middenveld aankan. Haal je een
+        linie weg, dan vervalt de centraal-knop die erbij hoort. Alles blijft
+        bewaard voor volgende wedstrijden.
       </p>
 
       {teWeinig && (
@@ -251,16 +286,16 @@ export function Aanwezigheid({
               <button
                 className="knop klein"
                 onClick={() => {
-                  if (confirm('Alle centraal-aanpassingen terugzetten naar de oorspronkelijke selectie?')) {
+                  if (confirm('Alle aanpassingen aan linies en centrale posities terugzetten naar de oorspronkelijke selectie?')) {
                     onHerstelSelectie()
                   }
                 }}
               >
-                Centrale posities terugzetten
+                Linies en centraal terugzetten
               </button>
               <p className="tel">
-                Alleen de centraal-knoppen terug naar de standaard; de wedstrijd
-                blijft zoals hij is.
+                Alleen de selectie terug naar de standaard; de wedstrijd blijft
+                zoals hij is.
               </p>
             </>
           )}

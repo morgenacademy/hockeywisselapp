@@ -8,7 +8,7 @@ import {
   blokInKwart,
   verstrekenMet,
 } from '../domain/clock'
-import type { Linie, Positie } from '../domain/formation'
+import { LINIES, type Linie, type Positie } from '../domain/formation'
 import { SELECTIE, magOpPositie, type Speelster } from '../domain/players'
 import { maakRooster, type Blok, type Opstelling, type Rooster } from '../domain/schedule'
 import { OEFENMODUS, STANDAARD_OEFENSNELHEID } from '../oefenmodus'
@@ -331,6 +331,36 @@ export function useWedstrijd() {
     }))
   }, [])
 
+  /**
+   * Zet een linie aan of uit voor één speelster.
+   *
+   * Twee dingen zitten eraan vast. Zonder linie kan ze nergens staan, dus haar
+   * laatste linie weghalen mag niet -- dat levert een speelster op die het
+   * rooster alleen maar in de weg zit. En haalt de leider een linie weg, dan
+   * gaat de centraal-vlag voor díe linie mee: "centraal op het middenveld"
+   * betekent niets meer zodra ze het middenveld niet meer speelt, en zo'n
+   * onzichtbare rest zorgt er alleen maar voor dat de rij iets anders zegt dan
+   * er in de gegevens staat.
+   */
+  const zetLinie = useCallback((id: string, linie: Linie, aan: boolean) => {
+    zetStand((huidig) => ({
+      ...huidig,
+      selectie: huidig.selectie.map((s) => {
+        if (s.id !== id) return s
+        if (!aan && s.linies.length <= 1) return s
+        return {
+          ...s,
+          // Altijd van achter naar voren, zodat "Verdediging / Aanval" niet
+          // ineens als "Aanval / Verdediging" in de rij komt te staan.
+          linies: aan
+            ? LINIES.filter((l) => l === linie || s.linies.includes(l))
+            : s.linies.filter((l) => l !== linie),
+          centraal: aan ? s.centraal : s.centraal.filter((l) => l !== linie),
+        }
+      }),
+    }))
+  }, [])
+
   /** Draait alle handmatige aanpassingen aan de selectie terug. */
   const herstelSelectie = useCallback(() => {
     zetStand((huidig) => ({ ...huidig, selectie: SELECTIE }))
@@ -412,6 +442,7 @@ export function useWedstrijd() {
     zetUitgevallen,
     zetOpPositie,
     zetCentraal,
+    zetLinie,
     herstelSelectie,
     zetSnelheid,
     naarVoorbereiding,
