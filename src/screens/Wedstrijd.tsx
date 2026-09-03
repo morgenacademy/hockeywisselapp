@@ -10,7 +10,7 @@ import { useAlarm } from '../hooks/useAlarm'
 import { useWakeLock } from '../hooks/useWakeLock'
 
 const LINIE_KLEUR: Record<string, string> = {
-  V: '#3b82c4',
+  V: '#4a9fd4',
   M: '#c9a227',
   A: '#c94f3b',
 }

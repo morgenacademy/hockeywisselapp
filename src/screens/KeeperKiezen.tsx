@@ -1,5 +1,6 @@
 import { controleerBezetting } from '../domain/schedule'
 import type { Speelster } from '../domain/players'
+import { Kop } from '../components/Kop'
 
 interface Props {
   aanwezigen: Speelster[]
@@ -14,6 +15,7 @@ export function KeeperKiezen({ aanwezigen, keeperId, onKies, onTerug, onVerder }
 
   return (
     <div className="scherm">
+      <Kop />
       <header className="scherm-kop">
         <h1>Wie keept?</h1>
         <p className="tel">Zij speelt de hele wedstrijd en wisselt niet mee.</p>

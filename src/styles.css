@@ -1,24 +1,35 @@
 /*
  * Ontworpen voor gebruik langs de lijn: grote raakvlakken, hoog contrast,
  * en alles wat er tijdens een wissel toe doet meteen in beeld.
+ *
+ * De huisstijl van HC Prinsenbeek is kanariegeel op marineblauw. Marineblauw
+ * doet al het chrome-werk; geel blijft schaars, want het is óók de kleur van
+ * het wisselmoment. Zou elk paneel geel zijn, dan valt het alarm niet meer op.
+ *
+ * Groen betekent twee dingen en dat blijft zo: het speelvlak, en "gaat door"
+ * (Start, erin, aanwezig).
  */
 
 :root {
+  /* Huisstijl */
+  --achtergrond: #0b1626;
+  --paneel: #132741;
+  --paneel-licht: #1b3455;
+  --rand: #2b4a70;
+  --tekst: #eef3f9;
+  --tekst-zacht: #9fb4cc;
+  --accent: #f7c600;
+
+  /* Signalen -- bewust niet in clubkleuren, die moeten los leesbaar blijven */
   --gras: #1b7a4b;
   --gras-donker: #14603a;
-  --achtergrond: #0d1b14;
-  --paneel: #14261d;
-  --paneel-licht: #1d3428;
-  --rand: #2c4a39;
-  --tekst: #eaf3ed;
-  --tekst-zacht: #9dbaa9;
-  --accent: #f5c518;
   --erin: #4ade80;
   --eruit: #f87171;
   --waarschuwing: #fbbf24;
-  --verdediging: #3b82c4;
-  --middenveld: #c9a227;
-  --aanval: #c94f3b;
+
+  /* De linie-kleuren op het veld staan in Wedstrijd.tsx (LINIE_KLEUR); ze
+     worden als inline fill op de shirtjes gezet, dus hier hoeft niets. */
+
   --radius: 12px;
 }
 
@@ -420,10 +431,13 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   cursor: pointer;
   touch-action: manipulation;
 }
+/* Bewust geen vol geel vlak: met zeven aangezette knoppen onder elkaar zou het
+   scherm geel worden en verliest het wisselmoment zijn signaal. */
 .centraal-knop.aan {
-  background: var(--accent);
+  background: var(--paneel-licht);
   border-color: var(--accent);
-  color: #1b1403;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 .centraal-knop:disabled {
   opacity: 0.28;
@@ -437,3 +451,35 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .centraal-tel.tekort { color: var(--waarschuwing); font-weight: 600; }
 .centraal-tel.tekort strong { color: var(--waarschuwing); }
 .centraal-tel em { font-style: normal; }
+
+/* --- kopbalk met clublogo --- */
+.kop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--accent);
+}
+.logo-beeld { display: block; object-fit: contain; }
+/* Terugval zolang public/logo.svg er nog niet is: een woordmerk dat er als een
+   keuze uitziet in plaats van een gat. */
+.logo-woordmerk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--achtergrond);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.kop-naam { display: flex; flex-direction: column; line-height: 1.15; }
+.kop-naam strong { font-size: 0.95rem; color: var(--accent); }
+.kop-naam em {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--tekst-zacht);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}

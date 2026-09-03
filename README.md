@@ -4,7 +4,21 @@ Wisselschema voor hockeywedstrijden. Je vinkt aan wie er is, kiest een keeper, e
 de app regelt de rest: wie er wisselt, wanneer, en op welke positie ze komt te
 staan. Iedereen speelt ongeveer even lang, en zoveel mogelijk op haar eigen linie.
 
-Werkt offline op je telefoon, zonder account.
+Werkt offline op je telefoon, zonder account. In de clubkleuren van
+**HC Prinsenbeek**: kanariegeel op marineblauw.
+
+## Het logo
+
+Zet het clublogo als `public/logo.svg` (of `.png`, dan het pad in
+`src/components/Logo.tsx` aanpassen) en de kop pakt het vanzelf op. Staat het er
+niet, dan toont de app een woordmerk **HCP** in de clubkleuren — geen gebroken
+plaatje. Als het logo er is, kun je ook `public/icon-192.png`, `icon-512.png` en
+`favicon.svg` eruit laten genereren.
+
+Kleuren: geel is bewust schaars gehouden. Het is de kleur van het wisselmoment
+en van het logo, en verder niet — anders valt het alarm langs de lijn niet meer
+op. Het veld blijft groen, want daarop lezen de shirtjes, de rode ERUIT-ring en
+de gele SCHUIFT-vlag het beste.
 
 ## Hoe het rekent
 

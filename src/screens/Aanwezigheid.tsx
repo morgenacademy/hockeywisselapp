@@ -2,6 +2,7 @@ import { LINIE_NAAM, positieInfo } from '../domain/formation'
 import { centraalHeeftZin, magOpPositie, sleutelPositiesVoor, type Speelster } from '../domain/players'
 import { SELECTIE } from '../domain/players'
 import { controleerBezetting } from '../domain/schedule'
+import { Kop } from '../components/Kop'
 
 /** De centraal-vlaggen zoals ze in de selectie staan, om te zien of er iets is aangepast. */
 const OORSPRONKELIJK = new Map(SELECTIE.map((s) => [s.id, s.centraal]))
@@ -50,6 +51,7 @@ export function Aanwezigheid({
 
   return (
     <div className="scherm">
+      <Kop />
       <header className="scherm-kop">
         <h1>Wie zijn er?</h1>
         <p className="tel">

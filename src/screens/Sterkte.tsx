@@ -1,4 +1,5 @@
 import { magOpPositie, type Speelster } from '../domain/players'
+import { Kop } from '../components/Kop'
 
 interface Props {
   aanwezigen: Speelster[]
@@ -82,6 +83,7 @@ export function Sterkte({ aanwezigen, keeperId, achter, midden, onZet, onTerug, 
 
   return (
     <div className="scherm">
+      <Kop />
       <header className="scherm-kop">
         <h1>Centrale posities</h1>
         <p className="tel">

@@ -2,6 +2,7 @@ import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd, kwartVanBlok } from '.
 import { POSITIE_CODES } from '../domain/formation'
 import type { Speelster } from '../domain/players'
 import type { Rooster } from '../domain/schedule'
+import { Kop } from '../components/Kop'
 
 interface Props {
   aanwezigen: Speelster[]
@@ -27,6 +28,7 @@ export function Overzicht({ aanwezigen, rooster, keeperId, huidigBlok, onTerug }
 
   return (
     <div className="scherm">
+      <Kop />
       <header className="scherm-kop">
         <h1>Overzicht</h1>
         <p className="tel">Speeltijd en positie per blok. Blok {huidigBlok + 1} loopt nu.</p>
