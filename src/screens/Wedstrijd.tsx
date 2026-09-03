@@ -6,6 +6,7 @@ import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd } from '../domain/clock
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
 import { wisselKetens, wisselOverzicht, type Rooster } from '../domain/schedule'
+import { OEFENMODUS, SNELHEDEN } from '../oefenmodus'
 import { useAlarm } from '../hooks/useAlarm'
 import { useWakeLock } from '../hooks/useWakeLock'
 
@@ -35,6 +36,9 @@ interface Props {
   onAlarmGezien: (blok: number) => void
   onOverzicht: () => void
   onOpnieuw: () => void
+  /** Alleen de oefenversie gebruikt dit; in de echte app bestaat de balk niet. */
+  snelheid: number
+  onSnelheid: (snelheid: number) => void
 }
 
 export function Wedstrijd(props: Props) {
@@ -125,6 +129,31 @@ export function Wedstrijd(props: Props) {
 
   return (
     <div className="scherm wedstrijd">
+      {OEFENMODUS && (
+        <div className="oefenbalk" role="status">
+          <span className="oefenbalk-tekst">
+            <strong>Oefenwedstrijd</strong>
+            <em>
+              {props.snelheid === 1
+                ? 'klok loopt op echte snelheid'
+                : `klok loopt ${props.snelheid}× sneller`}
+            </em>
+          </span>
+          <span className="oefenbalk-knoppen">
+            {SNELHEDEN.map((s) => (
+              <button
+                key={s}
+                className={`knop mini ${props.snelheid === s ? 'aan' : ''}`}
+                onClick={() => props.onSnelheid(s)}
+                aria-pressed={props.snelheid === s}
+              >
+                {s}×
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
+
       <Clock
         kwart={kwart}
         secondenInKwart={secondenInKwart}

@@ -44,3 +44,21 @@ export function formatTijd(seconden: number): string {
 export function blokkenNaarSeconden(blokken: number): number {
   return blokken * BLOK_SECONDEN
 }
+
+/**
+ * Verstreken tijd binnen een kwart, met een snelheidsfactor.
+ *
+ * De factor is er voor de oefenwedstrijd in de testversie: bij 60 duurt een
+ * wedstrijd ruim een minuut in plaats van 70. In de echte app staat hij altijd
+ * op 1. Deze berekening staat bewust op één plek, want de klok, het pauzeren én
+ * "volgend blok" gebruiken hem alle drie -- zou de factor er maar bij twee van
+ * de drie in zitten, dan springt de tijd zodra je pauzeert.
+ *
+ * @param basis      al vastgelegde seconden binnen dit kwart
+ * @param sindsMs    echte milliseconden sinds de klok startte
+ * @param snelheid   1 is normaal; hoger loopt sneller
+ */
+export function verstrekenMet(basis: number, sindsMs: number, snelheid: number): number {
+  const gelopen = Math.max(0, sindsMs) * Math.max(0, snelheid) / 1000
+  return Math.min(basis + gelopen, KWART_SECONDEN)
+}

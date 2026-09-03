@@ -1,0 +1,43 @@
+/*
+ * Stijlen voor de oefenbalk. Staan bewust in een eigen bestand: CSS wordt niet
+ * weggesnoeid op basis van gebruik, dus zouden deze regels in styles.css staan
+ * dan reisden ze mee naar de productiebuild. Nu worden ze alleen geladen als de
+ * oefenmodus aan staat.
+ */
+/* Bewust oranje en buiten het clubpalet, zodat je hem nooit voor gewone chrome
+   aanziet en meteen ziet dat de klok niet echt loopt. */
+.oefenbalk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: repeating-linear-gradient(
+    -45deg,
+    #7c3a06,
+    #7c3a06 10px,
+    #8f4408 10px,
+    #8f4408 20px
+  );
+  border: 2px solid #f59e0b;
+  color: #ffedd5;
+}
+.oefenbalk-tekst { display: flex; flex-direction: column; line-height: 1.2; }
+.oefenbalk-tekst strong {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fdba74;
+}
+.oefenbalk-tekst em { font-style: normal; font-size: 0.78rem; }
+.oefenbalk-knoppen { display: flex; gap: 6px; }
+.oefenbalk .knop.mini {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: #f59e0b;
+  color: #ffedd5;
+  font-weight: 700;
+  min-width: 40px;
+}
+.oefenbalk .knop.mini.aan { background: #f59e0b; color: #431407; }

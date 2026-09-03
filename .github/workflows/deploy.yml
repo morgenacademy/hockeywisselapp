@@ -29,6 +29,17 @@ jobs:
         env:
           # GitHub Pages serveert het project op /<repo>/.
           BASE_PATH: /${{ github.event.repository.name }}/
+
+      # De oefenwedstrijd hoort niet in de app die op zaterdag gebruikt wordt.
+      # Een versnelde klok die per ongeluk aan staat is erger dan geen
+      # oefenmodus, dus dit faalt liever de deploy dan dat het meelift.
+      - name: Controleer dat de oefenmodus niet is meegebouwd
+        run: |
+          if grep -rqE 'Oefenwedstrijd|oefenbalk' dist/; then
+            echo "::error::De oefenmodus zit in de productiebuild. Bouw zonder VITE_OEFENMODUS."
+            exit 1
+          fi
+          echo "Geen oefenmodus in de productiebuild."
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

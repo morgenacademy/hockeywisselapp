@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:oefen": "VITE_OEFENMODUS=1 tsc -b && VITE_OEFENMODUS=1 vite build",
+    "controleer:productie": "npm run build && ! grep -rq Oefenwedstrijd dist/ && echo 'ok: geen oefenmodus in de productiebuild'"
   },
   "dependencies": {
     "react": "^18.3.1",

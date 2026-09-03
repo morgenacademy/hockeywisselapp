@@ -137,12 +137,39 @@ Tijdens de wedstrijd kun je altijd ingrijpen: tik op een speelster op het veld o
 haar te vervangen, of zet iemand op **eruit** bij een blessure of kaart. De app
 rekent de rest van de wedstrijd opnieuw uit; wat al gespeeld is blijft staan.
 
+## Oefenwedstrijd (alleen in de testversie)
+
+Om de app te beoordelen zonder 70 minuten te wachten is er een oefenmodus: een
+balk met 1×, 10× en 60×. Op 60× loopt een hele wedstrijd in ruim een minuut, met
+alle elf wisselmomenten, het belletje en de kettingen.
+
+Die zit **niet** in de echte app. De scheiding zit in de build:
+
+```ts
+export const OEFENMODUS = import.meta.env.VITE_OEFENMODUS === '1'
+```
+
+Vite vervangt dat bij het bouwen door een letterlijke waarde, waarna de minifier
+elk `if (OEFENMODUS)`-blok weggooit. De stijlen staan om dezelfde reden in een
+apart bestand dat alleen dynamisch geladen wordt — CSS wordt namelijk níét
+weggesnoeid op basis van gebruik, dus in `styles.css` zouden ze wél meereizen.
+
+```bash
+npm run build          # echte app, zonder oefenmodus
+npm run build:oefen    # testversie, mét oefenmodus
+```
+
+Beide workflows in `.github/` controleren na de productiebuild dat het woord
+`Oefenwedstrijd` er niet in voorkomt, en falen als dat wel zo is. Een versnelde
+klok die op zaterdag per ongeluk aan staat is erger dan geen oefenmodus.
+
 ## Ontwikkelen
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173/hockeywisselapp/
-npm test         # de rooster-logica
+npm run dev                      # http://localhost:5173/hockeywisselapp/
+VITE_OEFENMODUS=1 npm run dev    # met oefenwedstrijd
+npm test                         # de rooster- en kloklogica
 npm run build
 ```
 

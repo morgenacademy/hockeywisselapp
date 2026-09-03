@@ -6,10 +6,12 @@ import {
   KWART_SECONDEN,
   blokIndex,
   blokInKwart,
+  verstrekenMet,
 } from '../domain/clock'
 import type { Positie } from '../domain/formation'
 import { SELECTIE, magOpPositie, type Speelster } from '../domain/players'
 import { maakRooster, type Blok, type Opstelling, type Rooster } from '../domain/schedule'
+import { OEFENMODUS, STANDAARD_OEFENSNELHEID } from '../oefenmodus'
 
 export type Fase = 'aanwezigheid' | 'keeper' | 'sterkte' | 'wedstrijd'
 
@@ -35,6 +37,8 @@ export interface WedstrijdStand {
   gestartOp: number | null
   /** Laatste blok waarvoor het alarm al is afgegaan. */
   alarmTot: number
+  /** Klokversnelling; alleen de oefenversie kan dit anders dan 1 zetten. */
+  snelheid: number
 }
 
 const OPSLAG_SLEUTEL = 'hockeywissel.wedstrijd.v1'
@@ -57,6 +61,7 @@ function standaardStand(): WedstrijdStand {
     loopt: false,
     gestartOp: null,
     alarmTot: -1,
+    snelheid: OEFENMODUS ? STANDAARD_OEFENSNELHEID : 1,
   }
 }
 
@@ -83,7 +88,7 @@ function schrijf(stand: WedstrijdStand) {
 export function verstrekenSeconden(stand: WedstrijdStand, nu: number): number {
   const basis = stand.secondenInKwart
   if (!stand.loopt || stand.gestartOp === null) return Math.min(basis, KWART_SECONDEN)
-  return Math.min(basis + (nu - stand.gestartOp) / 1000, KWART_SECONDEN)
+  return verstrekenMet(basis, nu - stand.gestartOp, stand.snelheid ?? 1)
 }
 
 export function useWedstrijd() {
@@ -265,6 +270,21 @@ export function useWedstrijd() {
     zetStand((huidig) => ({ ...huidig, selectie: SELECTIE }))
   }, [])
 
+  /**
+   * Klokversnelling voor de oefenwedstrijd. Legt eerst de al verstreken tijd
+   * vast, anders zou de nieuwe factor met terugwerkende kracht op de hele
+   * lopende periode worden toegepast en springt de klok.
+   */
+  const zetSnelheid = useCallback((snelheid: number) => {
+    if (!OEFENMODUS) return
+    zetStand((huidig) => ({
+      ...huidig,
+      secondenInKwart: verstrekenSeconden(huidig, Date.now()),
+      gestartOp: huidig.loopt ? Date.now() : null,
+      snelheid,
+    }))
+  }, [])
+
   const herstart = useCallback(() => {
     zetStand({ ...standaardStand(), selectie: standRef.current.selectie })
   }, [])
@@ -289,6 +309,7 @@ export function useWedstrijd() {
     zetOpPositie,
     zetCentraal,
     herstelSelectie,
+    zetSnelheid,
     herstart,
     markeerAlarm,
   }

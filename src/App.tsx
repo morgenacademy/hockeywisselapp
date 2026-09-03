@@ -108,6 +108,8 @@ export default function App() {
       onUitgevallen={w.zetUitgevallen}
       onZetOpPositie={w.zetOpPositie}
       onAlarmGezien={w.markeerAlarm}
+      snelheid={stand.snelheid ?? 1}
+      onSnelheid={w.zetSnelheid}
       onOverzicht={() => zetToonOverzicht(true)}
       onOpnieuw={() => {
         if (confirm('Wedstrijd opnieuw beginnen? De huidige stand gaat verloren.')) w.herstart()
