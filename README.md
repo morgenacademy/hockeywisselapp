@@ -222,6 +222,19 @@ Beide workflows in `.github/` controleren na de productiebuild dat het woord
 `Oefenwedstrijd` er niet in voorkomt, en falen als dat wel zo is. Een versnelde
 klok die op zaterdag per ongeluk aan staat is erger dan geen oefenmodus.
 
+## Vastzitten kan niet
+
+Twee dingen zorgen dat je altijd verder kunt:
+
+- **De opgeslagen wedstrijd heeft een versienummer.** Verandert de vorm van die
+  stand, dan wordt een oude stand genegeerd in plaats van half teruggezet. Zonder
+  dat sprong de app bij het openen meteen naar een oude wedstrijd en waren de
+  voorbereidingsschermen onbereikbaar.
+- **Vanaf het wedstrijdscherm kun je terug** met *Wijzig opstelling*, zonder de
+  wedstrijd weg te gooien. Op het aanwezigheidsscherm staat dan *Terug naar de
+  lopende wedstrijd*. `Opnieuw` blijft bestaan voor als je écht schoon wilt
+  beginnen.
+
 ## Ontwikkelen
 
 ```bash

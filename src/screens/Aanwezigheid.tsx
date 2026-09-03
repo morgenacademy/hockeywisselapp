@@ -16,6 +16,8 @@ interface Props {
   onCentraal: (id: string, aan: boolean) => void
   onHerstelSelectie: () => void
   onVerder: () => void
+  /** Alleen aanwezig als er al een wedstrijd loopt: dan kun je terug zonder wissen. */
+  onTerugNaarWedstrijd?: () => void
 }
 
 /** Wat levert de centraal-knop bij deze speelster op? */
@@ -96,6 +98,7 @@ function Bezettingstabel({
 
 export function Aanwezigheid({
   selectie, aanwezig, onWissel, onAlle, onCentraal, onHerstelSelectie, onVerder,
+  onTerugNaarWedstrijd,
 }: Props) {
   const aanwezigen = selectie.filter((s) => aanwezig.includes(s.id))
   const teWeinig = aanwezigen.length < 11
@@ -187,6 +190,12 @@ export function Aanwezigheid({
           }}
         >
           Terug naar de standaardselectie
+        </button>
+      )}
+
+      {onTerugNaarWedstrijd && (
+        <button className="knop klein" onClick={onTerugNaarWedstrijd}>
+          Terug naar de lopende wedstrijd
         </button>
       )}
 

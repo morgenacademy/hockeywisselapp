@@ -48,6 +48,12 @@ export default function App() {
         onCentraal={w.zetCentraal}
         onHerstelSelectie={w.herstelSelectie}
         onVerder={() => wijzig({ fase: 'keeper' })}
+        onTerugNaarWedstrijd={
+          // Alleen als er al gespeeld is; anders is er niets om naar terug te gaan.
+          stand.kwart > 1 || stand.secondenInKwart > 0
+            ? () => wijzig({ fase: 'wedstrijd' })
+            : undefined
+        }
       />
     )
   }
@@ -127,6 +133,7 @@ export default function App() {
       snelheid={stand.snelheid ?? 1}
       onSnelheid={w.zetSnelheid}
       onOverzicht={() => zetToonOverzicht(true)}
+      onVoorbereiding={w.naarVoorbereiding}
       onOpnieuw={() => {
         if (confirm('Wedstrijd opnieuw beginnen? De huidige stand gaat verloren.')) w.herstart()
       }}

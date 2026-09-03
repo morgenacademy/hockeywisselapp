@@ -39,9 +39,22 @@ export interface WedstrijdStand {
   alarmTot: number
   /** Klokversnelling; alleen de oefenversie kan dit anders dan 1 zetten. */
   snelheid: number
+  /** Vorm van de opgeslagen stand; zie OPSLAG_VERSIE. */
+  versie: number
 }
 
 const OPSLAG_SLEUTEL = 'hockeywissel.wedstrijd.v1'
+
+/**
+ * Vorm van de opgeslagen stand. Ophogen zodra er velden bij komen of hun
+ * betekenis verandert.
+ *
+ * Een oude stand wordt dan niet meer teruggezet maar genegeerd. Dat lijkt hard,
+ * maar het alternatief is erger: wie eerder heeft getest kreeg bij het openen
+ * een oude wedstrijd terug, sprong meteen naar het wedstrijdscherm en kon
+ * daardoor niet meer bij de voorbereiding komen.
+ */
+const OPSLAG_VERSIE = 2
 
 function standaardStand(): WedstrijdStand {
   return {
@@ -62,6 +75,7 @@ function standaardStand(): WedstrijdStand {
     gestartOp: null,
     alarmTot: -1,
     snelheid: OEFENMODUS ? STANDAARD_OEFENSNELHEID : 1,
+    versie: OPSLAG_VERSIE,
   }
 }
 
@@ -70,6 +84,10 @@ function lees(): WedstrijdStand {
     const ruw = localStorage.getItem(OPSLAG_SLEUTEL)
     if (!ruw) return standaardStand()
     const bewaard = JSON.parse(ruw) as Partial<WedstrijdStand>
+    // Een stand van een oudere versie kan velden missen of anders bedoeld zijn.
+    // Hem half terugzetten geeft rare toestanden -- bijvoorbeeld meteen in een
+    // oude wedstrijd belanden zonder weg terug. Dan liever schoon beginnen.
+    if (bewaard.versie !== OPSLAG_VERSIE) return standaardStand()
     return { ...standaardStand(), ...bewaard }
   } catch {
     return standaardStand()
@@ -285,6 +303,21 @@ export function useWedstrijd() {
     }))
   }, [])
 
+  /**
+   * Terug naar de voorbereidingsschermen zonder de wedstrijd weg te gooien.
+   * Zonder dit zit je vast zodra de wedstrijd eenmaal begonnen is: de enige uitweg
+   * was "Opnieuw", en dat wist alles.
+   */
+  const naarVoorbereiding = useCallback(() => {
+    zetStand((huidig) => ({
+      ...huidig,
+      fase: 'aanwezigheid',
+      loopt: false,
+      secondenInKwart: verstrekenSeconden(huidig, Date.now()),
+      gestartOp: null,
+    }))
+  }, [])
+
   const herstart = useCallback(() => {
     zetStand({ ...standaardStand(), selectie: standRef.current.selectie })
   }, [])
@@ -310,6 +343,7 @@ export function useWedstrijd() {
     zetCentraal,
     herstelSelectie,
     zetSnelheid,
+    naarVoorbereiding,
     herstart,
     markeerAlarm,
   }

@@ -35,6 +35,7 @@ interface Props {
   onZetOpPositie: (blok: number, positie: Positie, id: string | null) => void
   onAlarmGezien: (blok: number) => void
   onOverzicht: () => void
+  onVoorbereiding: () => void
   onOpnieuw: () => void
   /** Alleen de oefenversie gebruikt dit; in de echte app bestaat de balk niet. */
   snelheid: number
@@ -300,6 +301,7 @@ export function Wedstrijd(props: Props) {
       <div className="knoppenrij">
         <button className="knop klein" onClick={props.onVolgendBlok}>Volgend blok</button>
         <button className="knop klein" onClick={props.onOverzicht}>Overzicht</button>
+        <button className="knop klein" onClick={props.onVoorbereiding}>Wijzig opstelling</button>
         <button className="knop klein gevaar" onClick={props.onOpnieuw}>Opnieuw</button>
       </div>
 
