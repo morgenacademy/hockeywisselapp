@@ -11,6 +11,11 @@ const alleenEenBestand = process.env.SINGLE_FILE === '1'
 
 export default defineConfig({
   base,
+  // Alles in één HTML-bestand betekent: geen losse CSS-chunks en geen preloads
+  // naar bestanden die er dan niet zijn. Voor de gewone build blijft dit uit,
+  // zodat de stijlen van de oefenmodus in hun eigen chunk kunnen blijven en
+  // dus buiten de productiebuild vallen.
+  build: alleenEenBestand ? { cssCodeSplit: false, modulePreload: false } : {},
   plugins: [
     react(),
     ...(alleenEenBestand ? [] : [VitePWA({

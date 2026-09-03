@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:oefen": "VITE_OEFENMODUS=1 tsc -b && VITE_OEFENMODUS=1 vite build",
-    "controleer:productie": "npm run build && ! grep -rq Oefenwedstrijd dist/ && echo 'ok: geen oefenmodus in de productiebuild'"
+    "controleer:productie": "npm run build && ! grep -rq Oefenwedstrijd dist/ && echo 'ok: geen oefenmodus in de productiebuild'",
+    "bundel": "SINGLE_FILE=1 BASE_PATH=./ vite build && node scripts/bundel.mjs hockeywissels.html \"Hockey Wissels\"",
+    "bundel:oefen": "SINGLE_FILE=1 BASE_PATH=./ VITE_OEFENMODUS=1 vite build && node scripts/bundel.mjs hockeywissels-oefen.html \"Hockey Wissels — Oefenversie\""
   },
   "dependencies": {
     "react": "^18.3.1",
