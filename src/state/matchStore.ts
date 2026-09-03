@@ -46,15 +46,22 @@ export interface WedstrijdStand {
 const OPSLAG_SLEUTEL = 'hockeywissel.wedstrijd.v1'
 
 /**
- * Vorm van de opgeslagen stand. Ophogen zodra er velden bij komen of hun
- * betekenis verandert.
+ * Vorm van de opgeslagen stand. **Ophogen zodra een veld bij komt, verdwijnt of
+ * van vorm verandert.**
  *
- * Een oude stand wordt dan niet meer teruggezet maar genegeerd. Dat lijkt hard,
- * maar het alternatief is erger: wie eerder heeft getest kreeg bij het openen
- * een oude wedstrijd terug, sprong meteen naar het wedstrijdscherm en kon
- * daardoor niet meer bij de voorbereiding komen.
+ * Een oude stand wordt dan genegeerd in plaats van half teruggezet. Dat lijkt
+ * hard, maar half terugzetten is erger. Twee keer misgegaan:
+ *
+ *  - Versie 1 kende geen versienummer. Wie eerder had getest kreeg bij het
+ *    openen een oude wedstrijd terug en kwam niet meer bij de voorbereiding.
+ *  - Versie 2 bleef staan terwijl `centraal` van een ja/nee-waarde naar een
+ *    lijst linies ging. Een opgeslagen selectie van vóór die wijziging liet de
+ *    app crashen op `centraal.includes(...)`: witte pagina, niets meer te doen.
+ *
+ * Vergeten op te hogen is menselijk, dus `lees()` controleert de vorm nu ook
+ * echt in plaats van alleen het nummer te vertrouwen.
  */
-const OPSLAG_VERSIE = 2
+const OPSLAG_VERSIE = 3
 
 function standaardStand(): WedstrijdStand {
   return {
@@ -79,15 +86,41 @@ function standaardStand(): WedstrijdStand {
   }
 }
 
+/**
+ * Ziet deze opgeslagen selectie eruit zoals de app hem nu verwacht?
+ *
+ * Het versienummer is de eerste verdediging, maar het ophogen kan vergeten
+ * worden -- en dat is precies wat er gebeurde toen `centraal` van een ja/nee
+ * naar een lijst linies ging. Een kapotte opslag mag nooit een witte pagina
+ * opleveren, dus de vorm wordt hier ook echt nagekeken.
+ */
+export function selectieIsGeldig(selectie: unknown): boolean {
+  return (
+    Array.isArray(selectie) &&
+    selectie.every((s) => {
+      const speelster = s as Partial<Speelster>
+      return (
+        typeof speelster?.id === 'string' &&
+        typeof speelster?.naam === 'string' &&
+        Array.isArray(speelster?.linies) &&
+        Array.isArray(speelster?.centraal)
+      )
+    })
+  )
+}
+
 function lees(): WedstrijdStand {
   try {
     const ruw = localStorage.getItem(OPSLAG_SLEUTEL)
     if (!ruw) return standaardStand()
     const bewaard = JSON.parse(ruw) as Partial<WedstrijdStand>
     // Een stand van een oudere versie kan velden missen of anders bedoeld zijn.
-    // Hem half terugzetten geeft rare toestanden -- bijvoorbeeld meteen in een
-    // oude wedstrijd belanden zonder weg terug. Dan liever schoon beginnen.
+    // Hem half terugzetten geeft rare toestanden -- meteen in een oude wedstrijd
+    // belanden zonder weg terug, of een crash op een veranderd veld.
     if (bewaard.versie !== OPSLAG_VERSIE) return standaardStand()
+    if (bewaard.selectie !== undefined && !selectieIsGeldig(bewaard.selectie)) {
+      return standaardStand()
+    }
     return { ...standaardStand(), ...bewaard }
   } catch {
     return standaardStand()
