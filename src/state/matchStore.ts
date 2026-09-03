@@ -366,8 +366,31 @@ export function useWedstrijd() {
     }))
   }, [])
 
+  /**
+   * Wist de wedstrijd, maar niet de selectie.
+   *
+   * De centrale posities per linie zet de leider bewust in en die horen bij het
+   * team, niet bij deze wedstrijd -- die moeten een nieuwe wedstrijd dus
+   * overleven. Wie ook die terug wil, gebruikt `wisAlles`.
+   */
   const herstart = useCallback(() => {
     zetStand({ ...standaardStand(), selectie: standRef.current.selectie })
+  }, [])
+
+  /**
+   * Alles terug naar hoe de app uit de doos komt: wedstrijd én selectie.
+   *
+   * Gooit ook de opgeslagen stand weg in plaats van er een verse overheen te
+   * schrijven. Dat is de enige uitweg als er ooit iets in de opslag staat waar
+   * de app niet mee overweg kan.
+   */
+  const wisAlles = useCallback(() => {
+    try {
+      localStorage.removeItem(OPSLAG_SLEUTEL)
+    } catch {
+      // Opslag kan geweigerd worden; de stand in het geheugen gaat sowieso terug.
+    }
+    zetStand(standaardStand())
   }, [])
 
   const markeerAlarm = useCallback((blok: number) => {
@@ -393,6 +416,7 @@ export function useWedstrijd() {
     zetSnelheid,
     naarVoorbereiding,
     herstart,
+    wisAlles,
     markeerAlarm,
   }
 }

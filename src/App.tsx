@@ -47,6 +47,8 @@ export default function App() {
         onAlle={(aan) => wijzig({ aanwezig: aan ? stand.selectie.map((s) => s.id) : [], keeperId: null })}
         onCentraal={w.zetCentraal}
         onHerstelSelectie={w.herstelSelectie}
+        onNieuweWedstrijd={w.herstart}
+        onWisAlles={w.wisAlles}
         onVerder={() => wijzig({ fase: 'keeper' })}
         onTerugNaarWedstrijd={
           // Alleen als er al gespeeld is; anders is er niets om naar terug te gaan.
@@ -135,7 +137,13 @@ export default function App() {
       onOverzicht={() => zetToonOverzicht(true)}
       onVoorbereiding={w.naarVoorbereiding}
       onOpnieuw={() => {
-        if (confirm('Wedstrijd opnieuw beginnen? De huidige stand gaat verloren.')) w.herstart()
+        if (
+          confirm(
+            'Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan.',
+          )
+        ) {
+          w.herstart()
+        }
       }}
     />
   )

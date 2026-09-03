@@ -16,6 +16,10 @@ interface Props {
   onAlle: (aan: boolean) => void
   onCentraal: (id: string, linie: Linie, aan: boolean) => void
   onHerstelSelectie: () => void
+  /** Wist de wedstrijd; selectie en centrale posities blijven staan. */
+  onNieuweWedstrijd: () => void
+  /** Zet werkelijk alles terug, inclusief de centrale posities. */
+  onWisAlles: () => void
   onVerder: () => void
   /** Alleen aanwezig als er al een wedstrijd loopt: dan kun je terug zonder wissen. */
   onTerugNaarWedstrijd?: () => void
@@ -104,7 +108,8 @@ function Bezettingstabel({
 }
 
 export function Aanwezigheid({
-  selectie, aanwezig, onWissel, onAlle, onCentraal, onHerstelSelectie, onVerder,
+  selectie, aanwezig, onWissel, onAlle, onCentraal, onHerstelSelectie,
+  onNieuweWedstrijd, onWisAlles, onVerder,
   onTerugNaarWedstrijd,
 }: Props) {
   const aanwezigen = selectie.filter((s) => aanwezig.includes(s.id))
@@ -204,19 +209,6 @@ export function Aanwezigheid({
           <p className="melding waarschuwing" key={melding}>{melding}</p>
         ))}
 
-      {gewijzigd && (
-        <button
-          className="knop klein"
-          onClick={() => {
-            if (confirm('Alle centraal-aanpassingen terugzetten naar de oorspronkelijke selectie?')) {
-              onHerstelSelectie()
-            }
-          }}
-        >
-          Terug naar de standaardselectie
-        </button>
-      )}
-
       {onTerugNaarWedstrijd && (
         <button className="knop klein" onClick={onTerugNaarWedstrijd}>
           Terug naar de lopende wedstrijd
@@ -231,6 +223,64 @@ export function Aanwezigheid({
           Los eerst het tekort op — met deze bezetting komt het schema niet rond.
         </p>
       )}
+
+      {/* Twee soorten opnieuw beginnen, en het verschil zit hem in wat er
+          blijft staan. De centrale posities horen bij het team en niet bij deze
+          wedstrijd, dus die overleven een nieuwe wedstrijd -- ze per ongeluk
+          kwijtraken is werk van een kwartier. */}
+      <details className="opnieuw">
+        <summary>Opnieuw beginnen</summary>
+        <div className="opnieuw-inhoud">
+          <button
+            className="knop klein"
+            onClick={() => {
+              if (confirm('Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan.')) {
+                onNieuweWedstrijd()
+              }
+            }}
+          >
+            Nieuwe wedstrijd
+          </button>
+          <p className="tel">
+            Wist de keeper, de opstelling en de klok. Wie er zijn en wie centraal
+            kan, blijft staan.
+          </p>
+
+          {gewijzigd && (
+            <>
+              <button
+                className="knop klein"
+                onClick={() => {
+                  if (confirm('Alle centraal-aanpassingen terugzetten naar de oorspronkelijke selectie?')) {
+                    onHerstelSelectie()
+                  }
+                }}
+              >
+                Centrale posities terugzetten
+              </button>
+              <p className="tel">
+                Alleen de centraal-knoppen terug naar de standaard; de wedstrijd
+                blijft zoals hij is.
+              </p>
+            </>
+          )}
+
+          <button
+            className="knop klein gevaar"
+            onClick={() => {
+              if (confirm('Alles wissen? Ook de centrale posities die je zelf hebt aangezet gaan terug naar de standaard. Dit kun je niet ongedaan maken.')) {
+                onWisAlles()
+              }
+            }}
+          >
+            Alles wissen
+          </button>
+          <p className="tel">
+            Zet de app helemaal terug naar het begin, inclusief de centrale
+            posities. Gebruik dit ook als de app zich raar gedraagt.
+          </p>
+        </div>
+      </details>
     </div>
   )
 }

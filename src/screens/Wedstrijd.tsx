@@ -318,7 +318,7 @@ export function Wedstrijd(props: Props) {
         <button className="knop klein" onClick={props.onVolgendBlok}>Volgend blok</button>
         <button className="knop klein" onClick={props.onOverzicht}>Overzicht</button>
         <button className="knop klein" onClick={props.onVoorbereiding}>Wijzig opstelling</button>
-        <button className="knop klein gevaar" onClick={props.onOpnieuw}>Opnieuw</button>
+        <button className="knop klein gevaar" onClick={props.onOpnieuw}>Nieuwe wedstrijd</button>
       </div>
 
       {overlayZichtbaar && blok && (

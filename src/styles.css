@@ -413,6 +413,34 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .vooruitblik .keten { background: var(--paneel-licht); }
 
+/* Opnieuw beginnen staat ingeklapt: je hebt het zelden nodig, en als je het
+   nodig hebt moet het wel te vinden zijn. Elke knop krijgt een regel eronder
+   die zegt wat er precies weggaat -- het verschil tussen "nieuwe wedstrijd" en
+   "alles wissen" is nou juist wat je vooraf wilt weten. */
+.opnieuw {
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  background: var(--paneel);
+}
+.opnieuw > summary {
+  padding: 12px;
+  cursor: pointer;
+  color: var(--tekst-zacht);
+  font-size: .95rem;
+}
+.opnieuw[open] > summary {
+  border-bottom: 1px solid var(--rand);
+  color: var(--tekst);
+}
+.opnieuw-inhoud {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.opnieuw-inhoud .knop { align-self: flex-start; }
+.opnieuw-inhoud .tel { margin-bottom: 6px; }
+
 /* In de rust kijkt het veld vooruit naar het komende kwart. Dat moet
    onmiskenbaar zijn, anders denk je dat je het gespeelde kwart aanpast. */
 .bewerkkop {
