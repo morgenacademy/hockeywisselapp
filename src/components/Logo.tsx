@@ -3,17 +3,23 @@ import { useState } from 'react'
 /**
  * Het clublogo, met een woordmerk als terugval.
  *
- * Staat `public/logo.svg` er niet, dan toont dit het woordmerk HCP in de
- * clubkleuren in plaats van een gebroken plaatje. Zodra het echte bestand in
- * `public/` gezet wordt pakt de app het vanzelf op -- daar hoeft geen code voor
- * aangepast te worden.
+ * Zet het bestand als `public/logo.svg` of `public/logo.png` -- de app probeert
+ * ze in die volgorde en pakt op wat er staat. Is er niets, dan toont dit het
+ * woordmerk HCP in de clubkleuren in plaats van een gebroken plaatje. Er hoeft
+ * dus geen code aangepast te worden om het echte logo erin te zetten.
  */
-export function Logo({ formaat = 34 }: { formaat?: number }) {
-  const [gelukt, zetGelukt] = useState(true)
+const BESTANDEN = ['logo.svg', 'logo.png']
 
-  if (!gelukt) {
+export function Logo({ formaat = 34 }: { formaat?: number }) {
+  const [poging, zetPoging] = useState(0)
+
+  if (poging >= BESTANDEN.length) {
     return (
-      <span className="logo-woordmerk" style={{ width: formaat, height: formaat }} aria-label="HC Prinsenbeek">
+      <span
+        className="logo-woordmerk"
+        style={{ width: formaat, height: formaat }}
+        aria-label="HC Prinsenbeek"
+      >
         HCP
       </span>
     )
@@ -22,11 +28,11 @@ export function Logo({ formaat = 34 }: { formaat?: number }) {
   return (
     <img
       className="logo-beeld"
-      src={`${import.meta.env.BASE_URL}logo.svg`}
+      src={`${import.meta.env.BASE_URL}${BESTANDEN[poging]}`}
       width={formaat}
       height={formaat}
       alt="HC Prinsenbeek"
-      onError={() => zetGelukt(false)}
+      onError={() => zetPoging((p) => p + 1)}
     />
   )
 }

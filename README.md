@@ -9,8 +9,8 @@ Werkt offline op je telefoon, zonder account. In de clubkleuren van
 
 ## Het logo
 
-Zet het clublogo als `public/logo.svg` (of `.png`, dan het pad in
-`src/components/Logo.tsx` aanpassen) en de kop pakt het vanzelf op. Staat het er
+Zet het clublogo als `public/logo.svg` of `public/logo.png` en de kop pakt het
+vanzelf op — de app probeert beide bestandsnamen. Staat het er
 niet, dan toont de app een woordmerk **HCP** in de clubkleuren — geen gebroken
 plaatje. Als het logo er is, kun je ook `public/icon-192.png`, `icon-512.png` en
 `favicon.svg` eruit laten genereren.
