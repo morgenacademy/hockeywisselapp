@@ -6,7 +6,7 @@ import {
   type Linie,
   type Positie,
 } from './formation'
-import { inLinie, magOpPositie, type Speelster } from './players'
+import { inLinie, kanCentraal, magOpPositie, type Speelster } from './players'
 import { VERBODEN, hongaars, isVolledigTeBezetten, maximaleKoppeling } from './assignment'
 
 export type Opstelling = Partial<Record<Positie, string>>
@@ -137,8 +137,14 @@ function score1(speelster: Speelster, positie: Positie, ctx: Context): number {
     }
   }
 
-  const alGestaan = ctx.positieTeller.get(speelster.id)?.get(positie) ?? 0
-  score += GEWICHT.spreiding * (1 / (1 + alGestaan))
+  // Spreiding over posities alleen bij de open plekken. Op LV, CV en CM werkt
+  // hij averechts: nadat iemand daar een paar blokken heeft gestaan duwt hij
+  // haar naar de ándere centrale plek, zodat een vast duo tussen hun beurten
+  // door van plek ruilt. Juist daar wil je dat iemand haar plek houdt.
+  if (!info.sleutel) {
+    const alGestaan = ctx.positieTeller.get(speelster.id)?.get(positie) ?? 0
+    score += GEWICHT.spreiding * (1 / (1 + alGestaan))
+  }
 
   return score
 }
@@ -435,8 +441,7 @@ function kanMetEenSchuif(veld: Speelster[], niveau: Niveau, ctx: Context): boole
 
 /** In welke linies kan deze speelster een sleutelpositie bezetten? */
 function sleutelLinies(speelster: Speelster): Linie[] {
-  if (!speelster.centraal) return []
-  return (['V', 'M'] as Linie[]).filter((l) => speelster.linies.includes(l))
+  return (['V', 'M'] as Linie[]).filter((l) => kanCentraal(speelster, l))
 }
 
 /**
@@ -454,8 +459,8 @@ function rustDruk(speelster: Speelster, veld: Speelster[]): number {
   ]
   let druk = 0
   for (const [linie, nodig] of pools) {
-    if (!speelster.centraal || !speelster.linies.includes(linie)) continue
-    const omvang = veld.filter((s) => s.centraal && s.linies.includes(linie)).length
+    if (!kanCentraal(speelster, linie)) continue
+    const omvang = veld.filter((s) => kanCentraal(s, linie)).length
     if (omvang > 0) druk = Math.max(druk, nodig / omvang)
   }
   return druk

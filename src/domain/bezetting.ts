@@ -1,6 +1,6 @@
 import { AANTAL_BLOKKEN } from './clock'
-import { AANTAL_VELDPOSITIES, LINIE_NAAM, POSITIES, type Linie, type Positie } from './formation'
-import { centraalHeeftZin, magOpPositie, sleutelPositiesVoor, type Speelster } from './players'
+import { AANTAL_VELDPOSITIES, LINIE_NAAM, POSITIES, type Linie } from './formation'
+import { centraalLinies, kanCentraal, magOpPositie, type Speelster } from './players'
 
 /**
  * Hoeveel speelsters heb je nodig voor een groep posities?
@@ -53,6 +53,8 @@ export interface GroepAdvies {
   minimum: number
   advies: number
   status: GroepStatus
+  /** De linie waarvoor je centraal kunt aanzetten; alleen bij de centrale groepen. */
+  linie?: Linie
   /**
    * Wie je met de centraal-knop kunt aanvullen. Alleen gevuld voor LV/CV en CM:
    * de linies volgen uit wie er is en zijn niet met een knop op te lossen.
@@ -86,22 +88,22 @@ export function bezettingsAdvies(aanwezigen: Speelster[], keeperId: string | nul
     toelichting: string,
     plekken: number,
     telt: (s: Speelster) => boolean,
-    aanvulbaarOp?: Positie,
+    aanvulLinie?: Linie,
   ): GroepAdvies => {
     const { minimum, advies } = benodigd(plekken, V)
     const aanwezigInGroep = veld.filter(telt).length
     const status: GroepStatus =
       aanwezigInGroep < minimum ? 'tekort' : aanwezigInGroep < advies ? 'krap' : 'goed'
-    // Wie zou deze groep aanvullen als je bij haar `centraal` aanzet?
-    const aanTeVullen = aanvulbaarOp
-      ? veld.filter(
-          (s) =>
-            !s.centraal &&
-            centraalHeeftZin(s) &&
-            sleutelPositiesVoor(s).includes(aanvulbaarOp),
-        )
+    // Wie zou deze groep aanvullen als je bij haar centraal aanzet voor déze
+    // linie? Speelsters die de linie spelen maar er nog niet centraal staan.
+    const aanTeVullen = aanvulLinie
+      ? veld.filter((s) => centraalLinies(s).includes(aanvulLinie) && !kanCentraal(s, aanvulLinie))
       : []
-    return { sleutel, naam, toelichting, plekken, aanwezig: aanwezigInGroep, minimum, advies, status, aanTeVullen }
+    return {
+      sleutel, naam, toelichting, plekken,
+      aanwezig: aanwezigInGroep, minimum, advies, status, aanTeVullen,
+      linie: aanvulLinie,
+    }
   }
 
   return [
@@ -111,7 +113,7 @@ export function bezettingsAdvies(aanwezigen: Speelster[], keeperId: string | nul
       'laatste vrouw en centrale verdediger',
       2,
       (s) => magOpPositie(s, 'LV'),
-      'LV',
+      'V',
     ),
     maak(
       'centraalMidden',
@@ -119,7 +121,7 @@ export function bezettingsAdvies(aanwezigen: Speelster[], keeperId: string | nul
       'centrale middenveld',
       1,
       (s) => magOpPositie(s, 'CM'),
-      'CM',
+      'M',
     ),
     ...(['V', 'M', 'A'] as Linie[]).map((linie) =>
       maak(

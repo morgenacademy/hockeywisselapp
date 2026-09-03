@@ -415,7 +415,14 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 
 /* --- aanwezigheid: afvinken en centraal staan los van elkaar --- */
 .rij-groep { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; }
-.rij-groep .rij { border-radius: var(--radius) 0 0 var(--radius); }
+.rij-groep .rij { border-radius: var(--radius); }
+/* Eén knop per linie waarin een centrale plek zit. */
+.centraal-knoppen {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+}
 .centraal-knop {
   font: inherit;
   font-size: 0.62rem;
@@ -423,8 +430,8 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   letter-spacing: 0.01em;
   text-transform: uppercase;
   width: 80px;
-  padding: 8px 4px;
-  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 6px 4px;
+  border-radius: var(--radius);
   border: 1px solid var(--rand);
   background: var(--paneel);
   color: var(--tekst-zacht);
@@ -439,10 +446,12 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
 }
-.centraal-knop:disabled {
-  opacity: 0.28;
-  cursor: not-allowed;
-  text-decoration: line-through;
+.centraal-knop.niet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.3;
+  cursor: default;
 }
 .centraal-tel { margin: 6px 0 0; font-size: 0.85rem; color: var(--tekst-zacht); }
 .centraal-tel strong { color: var(--tekst); font-weight: 700; }

@@ -1,35 +1,38 @@
 import { bezettingsAdvies, heeftTekort, type GroepAdvies } from '../domain/bezetting'
-import { LINIE_NAAM, positieInfo } from '../domain/formation'
-import { centraalHeeftZin, sleutelPositiesVoor, type Speelster } from '../domain/players'
+import type { Linie } from '../domain/formation'
+import { LINIE_NAAM } from '../domain/formation'
+import { centraalLinies, kanCentraal, type Speelster } from '../domain/players'
 import { SELECTIE } from '../domain/players'
 import { controleerBezetting } from '../domain/schedule'
 import { Kop } from '../components/Kop'
 
 /** De centraal-vlaggen zoals ze in de selectie staan, om te zien of er iets is aangepast. */
-const OORSPRONKELIJK = new Map(SELECTIE.map((s) => [s.id, s.centraal]))
+const OORSPRONKELIJK = new Map(SELECTIE.map((s) => [s.id, s.centraal.join(',')]))
 
 interface Props {
   selectie: Speelster[]
   aanwezig: string[]
   onWissel: (id: string) => void
   onAlle: (aan: boolean) => void
-  onCentraal: (id: string, aan: boolean) => void
+  onCentraal: (id: string, linie: Linie, aan: boolean) => void
   onHerstelSelectie: () => void
   onVerder: () => void
   /** Alleen aanwezig als er al een wedstrijd loopt: dan kun je terug zonder wissen. */
   onTerugNaarWedstrijd?: () => void
 }
 
-/** Wat levert de centraal-knop bij deze speelster op? */
-function centraalUitleg(speelster: Speelster): string {
-  const posities = sleutelPositiesVoor(speelster)
-  if (posities.length === 0) {
-    return `${speelster.naam} speelt alleen aanval, en daar is geen centrale sleutelpositie.`
-  }
-  const namen = posities.map((p) => positieInfo(p).naam.toLowerCase()).join(' en ')
-  return speelster.centraal
-    ? `${speelster.naam} kan nu op ${namen}. Tik om dat uit te zetten.`
-    : `Zet aan als ${speelster.naam} ook op ${namen} kan staan.`
+/** Welke centrale plek zit er in deze linie? */
+const CENTRAAL_LABEL: Record<string, { kort: string; lang: string }> = {
+  V: { kort: 'achterin', lang: 'laatste vrouw en centrale verdediger' },
+  M: { kort: 'midden', lang: 'centrale middenveld' },
+}
+
+/** Wat levert deze knop op? */
+function centraalUitleg(speelster: Speelster, linie: Linie): string {
+  const wat = CENTRAAL_LABEL[linie].lang
+  return kanCentraal(speelster, linie)
+    ? `${speelster.naam} kan nu op ${wat}. Tik om dat uit te zetten.`
+    : `Zet aan als ${speelster.naam} deze wedstrijd op ${wat} kan staan.`
 }
 
 /**
@@ -45,7 +48,7 @@ function Bezettingstabel({
   onCentraal,
 }: {
   advies: GroepAdvies[]
-  onCentraal: (id: string, aan: boolean) => void
+  onCentraal: (id: string, linie: Linie, aan: boolean) => void
 }) {
   const teKort = advies.filter((g) => g.status !== 'goed')
 
@@ -81,7 +84,11 @@ function Bezettingstabel({
               Zet centraal aan bij:{' '}
               <span className="aanvul-knoppen">
                 {groep.aanTeVullen.map((s) => (
-                  <button key={s.id} className="knop mini" onClick={() => onCentraal(s.id, true)}>
+                  <button
+                    key={s.id}
+                    className="knop mini"
+                    onClick={() => onCentraal(s.id, groep.linie!, true)}
+                  >
                     {s.naam}
                   </button>
                 ))}
@@ -112,7 +119,7 @@ export function Aanwezigheid({
   // na. Dit geeft alvast het beeld over de hele groep.
   const advies = bezettingsAdvies(aanwezigen, null)
   const tekort = heeftTekort(advies)
-  const gewijzigd = selectie.some((s) => s.centraal !== OORSPRONKELIJK.get(s.id))
+  const gewijzigd = selectie.some((s) => s.centraal.join(',') !== OORSPRONKELIJK.get(s.id))
 
   return (
     <div className="scherm">
@@ -137,7 +144,10 @@ export function Aanwezigheid({
       <ul className="lijst">
         {selectie.map((speelster) => {
           const aan = aanwezig.includes(speelster.id)
-          const kanCentraal = centraalHeeftZin(speelster)
+          // Eén knop per linie waarin een centrale plek zit én die zij speelt.
+          // Voor een aanvalster blijft die lijst leeg: de voorhoede kent geen
+          // centrale sleutelplek.
+          const linies = centraalLinies(speelster)
           return (
             <li key={speelster.id} className="rij-groep">
               <button
@@ -151,23 +161,37 @@ export function Aanwezigheid({
                   {speelster.linies.map((l) => LINIE_NAAM[l]).join(' / ')}
                 </span>
               </button>
-              <button
-                className={`centraal-knop ${speelster.centraal ? 'aan' : 'uit'}`}
-                onClick={() => onCentraal(speelster.id, !speelster.centraal)}
-                disabled={!kanCentraal}
-                aria-pressed={kanCentraal ? speelster.centraal : undefined}
-                title={centraalUitleg(speelster)}
-              >
-                centraal
-              </button>
+              <span className="centraal-knoppen">
+                {linies.length === 0 ? (
+                  <span
+                    className="centraal-knop niet"
+                    title={`${speelster.naam} speelt alleen aanval, en daar is geen centrale plek.`}
+                  >
+                    —
+                  </span>
+                ) : (
+                  linies.map((linie) => (
+                    <button
+                      key={linie}
+                      className={`centraal-knop ${kanCentraal(speelster, linie) ? 'aan' : 'uit'}`}
+                      onClick={() => onCentraal(speelster.id, linie, !kanCentraal(speelster, linie))}
+                      aria-pressed={kanCentraal(speelster, linie)}
+                      title={centraalUitleg(speelster, linie)}
+                    >
+                      {CENTRAAL_LABEL[linie].kort}
+                    </button>
+                  ))
+                )}
+              </span>
             </li>
           )
         })}
       </ul>
 
       <p className="tel">
-        Tik op <em>centraal</em> om iemand ook op laatste vrouw, centrale verdediger of
-        centrale middenveld te kunnen zetten. Dat blijft bewaard voor volgende wedstrijden.
+        Per linie aan te zetten: <em>achterin</em> voor laatste vrouw en centrale verdediger,
+        <em>midden</em> voor centrale middenveld. Iemand kan prima achterin centraal staan
+        zonder dat ze het middenveld aankan. Blijft bewaard voor volgende wedstrijden.
       </p>
 
       {teWeinig && (

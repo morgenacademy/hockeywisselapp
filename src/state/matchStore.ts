@@ -8,7 +8,7 @@ import {
   blokInKwart,
   verstrekenMet,
 } from '../domain/clock'
-import type { Positie } from '../domain/formation'
+import type { Linie, Positie } from '../domain/formation'
 import { SELECTIE, magOpPositie, type Speelster } from '../domain/players'
 import { maakRooster, type Blok, type Opstelling, type Rooster } from '../domain/schedule'
 import { OEFENMODUS, STANDAARD_OEFENSNELHEID } from '../oefenmodus'
@@ -275,11 +275,26 @@ export function useWedstrijd() {
     [bevries, rooster.blokken],
   )
 
-  /** Zet `centraal` aan of uit voor één speelster; blijft bewaard tussen wedstrijden. */
-  const zetCentraal = useCallback((id: string, centraal: boolean) => {
+  /**
+   * Zet centraal aan of uit voor één speelster in één linie.
+   *
+   * Per linie, want dat verschilt echt: iemand kan prima laatste vrouw zijn
+   * zonder dat ze het centrale middenveld aankan. Blijft bewaard tussen
+   * wedstrijden.
+   */
+  const zetCentraal = useCallback((id: string, linie: Linie, aan: boolean) => {
     zetStand((huidig) => ({
       ...huidig,
-      selectie: huidig.selectie.map((s) => (s.id === id ? { ...s, centraal } : s)),
+      selectie: huidig.selectie.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              centraal: aan
+                ? [...new Set([...s.centraal, linie])]
+                : s.centraal.filter((l) => l !== linie),
+            }
+          : s,
+      ),
     }))
   }, [])
 

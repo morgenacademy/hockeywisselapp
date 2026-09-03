@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { benodigd, bezettingsAdvies, heeftTekort } from '../bezetting'
 import { POSITIE_CODES } from '../formation'
-import { SELECTIE, magOpPositie, type Speelster } from '../players'
+import { SELECTIE, centraalLinies, magOpPositie, type Speelster } from '../players'
 import { maakRooster } from '../schedule'
 
 describe('de rekensom', () => {
@@ -62,6 +62,31 @@ describe('advies voor de echte selectie', () => {
     expect(verdediging.aanwezig).toBe(5)
     expect(verdediging.advies).toBe(6)
     expect(verdediging.status).not.toBe('goed')
+  })
+
+  it('kan centraal per linie apart aan- en uitzetten', () => {
+    // Saffiya speelt middenveld en verdediging. Alleen achterin centraal moet
+    // kunnen zonder dat ze daarmee ook het centrale middenveld erbij krijgt.
+    const saffiya = SELECTIE.find((s) => s.id === 'p09')!
+    const alleenAchterin = { ...saffiya, centraal: ['V' as const] }
+    expect(magOpPositie(alleenAchterin, 'LV')).toBe(true)
+    expect(magOpPositie(alleenAchterin, 'CV')).toBe(true)
+    expect(magOpPositie(alleenAchterin, 'CM')).toBe(false)
+
+    const alleenMidden = { ...saffiya, centraal: ['M' as const] }
+    expect(magOpPositie(alleenMidden, 'CM')).toBe(true)
+    expect(magOpPositie(alleenMidden, 'LV')).toBe(false)
+  })
+
+  it('biedt alleen linies aan waarin een centrale plek zit', () => {
+    // Cato speelt alleen aanval; daar is niets aan te zetten.
+    expect(centraalLinies(SELECTIE.find((s) => s.id === 'p07')!)).toEqual([])
+    // Kate speelt alleen verdediging.
+    expect(centraalLinies(SELECTIE.find((s) => s.id === 'p05')!)).toEqual(['V'])
+    // Kiki speelt middenveld en aanval; alleen het middenveld telt.
+    expect(centraalLinies(SELECTIE.find((s) => s.id === 'p02')!)).toEqual(['M'])
+    // Lynn speelt alle drie; verdediging en middenveld tellen.
+    expect(centraalLinies(SELECTIE.find((s) => s.id === 'p15')!)).toEqual(['V', 'M'])
   })
 
   it('noemt wie je kunt aanvullen, en alleen waar dat kan', () => {

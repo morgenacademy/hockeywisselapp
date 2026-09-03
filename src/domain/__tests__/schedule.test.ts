@@ -389,7 +389,7 @@ describe('centraal vooraf aanzetten', () => {
   })
 
   it('laat Kate Janssen centraal spelen zodra je het aanzet', () => {
-    const metKate = SELECTIE.map((s) => (s.id === 'p05' ? { ...s, centraal: true } : s))
+    const metKate = SELECTIE.map((s) => (s.id === 'p05' ? { ...s, centraal: ['V' as const] } : s))
     const kate = metKate.find((s) => s.id === 'p05')!
     expect(magOpPositie(kate, 'LV')).toBe(true)
     expect(magOpPositie(kate, 'CV')).toBe(true)
@@ -414,8 +414,13 @@ describe('centraal vooraf aanzetten', () => {
     expect(controleerBezetting(dun, 'p03').ok).toBe(false)
 
     // Kate en Eva van der Zee erbij voor achterin, Suus voor het middenveld.
+    // Kate en Eva van der Zee centraal achterin, Suus centraal op het middenveld.
     const versterkt = dun.map((s) =>
-      ['p05', 'p16', 'p08'].includes(s.id) ? { ...s, centraal: true } : s,
+      ['p05', 'p16'].includes(s.id)
+        ? { ...s, centraal: ['V' as const] }
+        : s.id === 'p08'
+          ? { ...s, centraal: ['M' as const] }
+          : s,
     )
     const check = controleerBezetting(versterkt, 'p03')
     expect(check.ok, check.meldingen.join(' / ')).toBe(true)
@@ -726,7 +731,7 @@ describe('samenspel: speelsters die om dezelfde plek concurreren', () => {
 
   /** In welke linies kan zij een sleutelpositie bezetten? */
   const sleutelLinies = (s: Speelster) =>
-    s.centraal ? (['V', 'M'] as const).filter((l) => s.linies.includes(l)) : []
+    (['V', 'M'] as const).filter((l) => s.linies.includes(l) && s.centraal.includes(l))
 
   const staatOpVeld = (blok: Blok, id: string) => bezetteIds(blok).includes(id)
 

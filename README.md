@@ -261,9 +261,10 @@ op **GitHub Actions**.
 ## De selectie aanpassen
 
 De vaste selectie staat in `src/domain/players.ts`. Elke speelster heeft haar
-voorkeurslinies (`V`, `M`, `A`) en of ze centraal kan. Let op: `centraal` geldt
-binnen haar eigen linies — een aanvalster met `centraal` komt daardoor niet op
-CM terecht.
+voorkeurslinies (`V`, `M`, `A`) en `centraal`: de linies waarin ze de centrale
+plek aankan. Dat is per linie, want dat verschilt echt — iemand kan prima laatste
+vrouw zijn zonder dat ze het centrale middenveld aankan. Alleen linies die ze ook
+speelt tellen mee, en de aanval heeft geen centrale sleutelplek.
 
 De centraal-vlag kun je ook in de app zelf aanzetten; die wijziging wordt lokaal
 bewaard. Alleen voor het aanpassen van linies moet je dit bestand in.
