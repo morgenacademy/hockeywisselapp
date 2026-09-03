@@ -254,9 +254,14 @@ De logica zit in `src/domain/` en is los te testen zonder browser:
 - `assignment.ts` — koppeling (Kuhn) en toewijzing (Hongaars)
 - `clock.ts` — kwarten, blokken en tijd
 
-Publiceren gaat automatisch naar GitHub Pages bij een push naar `main`
-(`.github/workflows/deploy.yml`). Zet in de repo-instellingen **Pages → Source**
-op **GitHub Actions**.
+Publiceren gaat automatisch naar GitHub Pages bij elke push naar de
+standaardbranch (`.github/workflows/deploy.yml`). Eenmalig instellen: in de repo
+**Settings → Pages → Source** op **GitHub Actions** zetten. Daarna staat de app
+op `https://morgenacademy.github.io/hockeywisselapp/` — zonder login,
+installeerbaar op je beginscherm en offline bruikbaar.
+
+De workflow weigert te publiceren als de oefenmodus per ongeluk in de
+productiebuild zit.
 
 ## De selectie aanpassen
 

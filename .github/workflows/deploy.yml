@@ -2,7 +2,10 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    # De standaardbranch van deze repo is de werkbranch; `main` bestaat (nog)
+    # niet. Beide staan hier, zodat publiceren nu werkt en blijft werken als er
+    # later alsnog een `main` komt.
+    branches: [main, claude/hockey-wissel-app-04unax]
   workflow_dispatch:
 
 permissions:
