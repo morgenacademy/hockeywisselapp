@@ -184,7 +184,7 @@ export function Aanwezigheid({
                     return (
                       <button
                         key={linie}
-                        className={`chip-knop ${speelt ? 'aan' : 'uit'}`}
+                        className={`chip-knop linie ${speelt ? 'aan' : 'uit'}`}
                         onClick={() => onLinie(speelster.id, linie, !speelt)}
                         aria-pressed={speelt}
                         disabled={vast}
@@ -203,12 +203,12 @@ export function Aanwezigheid({
                 </span>
 
                 {centraalKnoppen.length > 0 && (
-                  <span className="instel-groep">
+                  <span className="instel-groep centraal">
                     <span className="instel-label">centraal</span>
                     {centraalKnoppen.map((linie) => (
                       <button
                         key={linie}
-                        className={`chip-knop ${kanCentraal(speelster, linie) ? 'aan' : 'uit'}`}
+                        className={`chip-knop centraal ${kanCentraal(speelster, linie) ? 'aan' : 'uit'}`}
                         onClick={() => onCentraal(speelster.id, linie, !kanCentraal(speelster, linie))}
                         aria-pressed={kanCentraal(speelster, linie)}
                         title={centraalUitleg(speelster, linie)}

@@ -499,8 +499,8 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .speelster-kaart .rij.aan { background: var(--paneel-licht); box-shadow: inset 3px 0 0 var(--accent); }
 .instellingen {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
+  flex-direction: column;
+  gap: 6px;
   padding: 8px 12px 10px;
   border-top: 1px solid var(--rand);
 }
@@ -509,9 +509,12 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--tekst-zacht);
-  margin-right: 2px;
+  /* Breed genoeg voor "CENTRAAL", zodat beide rijen op dezelfde kolom
+     uitlijnen en het label niet onder de eerste knop verdwijnt. */
+  width: 66px;
+  flex-shrink: 0;
 }
 .chip-knop {
   font: inherit;
@@ -525,10 +528,39 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   cursor: pointer;
   touch-action: manipulation;
 }
-.chip-knop.aan {
+
+/* Linie en centraal moeten uit elkaar te houden zijn zonder te lezen, en dat
+   lukt niet met twee rijen identieke gele pillen. Het verschil zit daarom in de
+   nadruk, niet in de kleur: welke linie iemand speelt is de gewone informatie
+   en blijft rustig (omlijnd), centraal is de uitzondering en is luid (vol
+   vlak). Zo zie je in één blik wie er centraal kan staan. */
+.chip-knop.linie.aan {
+  background: var(--paneel-licht);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.instel-groep.centraal {
+  padding: 4px 6px;
+  margin: 0 -6px;
+  border-radius: 8px;
+  background: rgba(255, 212, 0, 0.07);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.instel-groep.centraal .instel-label { color: var(--accent); }
+.chip-knop.centraal {
+  border-style: dashed;
+  border-color: var(--accent);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.chip-knop.centraal.aan {
+  border-style: solid;
   background: var(--accent);
   border-color: var(--accent);
   color: var(--op-accent);
+  box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.22);
 }
 /* Haar laatste linie: zichtbaar aan, maar niet weg te halen. */
 .chip-knop:disabled { cursor: not-allowed; opacity: 0.75; }
