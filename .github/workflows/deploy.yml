@@ -28,10 +28,24 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Geen BASE_PATH hier: vite leidt het basispad af uit public/CNAME, zodat
+      # een eigen domein en de github.io-URL allebei kloppen zonder dat je op
+      # twee plekken hetzelfde moet onthouden.
       - run: npm run build
-        env:
-          # GitHub Pages serveert het project op /<repo>/.
-          BASE_PATH: /${{ github.event.repository.name }}/
+
+      # Een eigen domein zonder CNAME in dist/ raakt GitHub Pages bij de
+      # volgende deploy weer kwijt. Liever hier falen dan zaterdag op het veld.
+      - name: Controleer het eigen domein
+        run: |
+          if [ -s public/CNAME ]; then
+            if [ ! -s dist/CNAME ]; then
+              echo "::error::public/CNAME staat er wel, dist/CNAME niet."
+              exit 1
+            fi
+            echo "Eigen domein: $(cat dist/CNAME)"
+          else
+            echo "Geen eigen domein; de app komt op /<repo>/ te staan."
+          fi
 
       # De oefenwedstrijd hoort niet in de app die op zaterdag gebruikt wordt.
       # Een versnelde klok die per ongeluk aan staat is erger dan geen

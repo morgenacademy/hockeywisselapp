@@ -1,9 +1,16 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Base path targets GitHub Pages at /<repo>/; override with BASE_PATH for other hosts.
-const base = process.env.BASE_PATH ?? '/hockeywisselapp/'
+// Met een eigen domein serveert GitHub Pages de app op de root van dat domein,
+// zonder eigen domein op /<repo>/. `public/CNAME` is precies het bestand waarin
+// het eigen domein staat, dus dat bepaalt hier ook het basispad: één regel
+// invullen en de paden kloppen, ook die in het manifest.
+const cname = fileURLToPath(new URL('./public/CNAME', import.meta.url))
+const eigenDomein = existsSync(cname) && readFileSync(cname, 'utf8').trim() !== ''
+const base = process.env.BASE_PATH ?? (eigenDomein ? '/' : '/hockeywisselapp/')
 
 // Voor de gehoste testversie wordt alles in één HTML-bestand gebundeld; daar
 // hoort geen service worker bij.

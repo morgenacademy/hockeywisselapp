@@ -300,7 +300,7 @@ mee overweg kan.
 
 ```bash
 npm install
-npm run dev                      # http://localhost:5173/hockeywisselapp/
+npm run dev                      # http://localhost:5173/hockeywisselapp/ (met eigen domein: /)
 VITE_OEFENMODUS=1 npm run dev    # met oefenwedstrijd
 npm test                         # de rooster- en kloklogica
 npm run build
@@ -328,6 +328,47 @@ installeerbaar op je beginscherm en offline bruikbaar.
 
 De workflow weigert te publiceren als de oefenmodus per ongeluk in de
 productiebuild zit.
+
+## Een eigen domein
+
+De app is één pagina zonder login, dus een gekocht domein kan er rechtstreeks
+naartoe wijzen. Een landingspagina ertussen is niet nodig: wie de URL intypt,
+staat meteen in het beginscherm van de wedstrijd.
+
+Er zijn drie dingen nodig, en de DNS is de traagste — begin daarmee.
+
+**1. DNS bij de partij waar je het domein gekocht hebt.** Welke records je zet
+hangt ervan af of je het kale domein of een subdomein gebruikt:
+
+- `wissels.jouwdomein.nl` (subdomein, het eenvoudigst): één `CNAME`-record met
+  waarde `morgenacademy.github.io`.
+- `jouwdomein.nl` (kaal domein): vier `A`-records naar `185.199.108.153`,
+  `185.199.109.153`, `185.199.110.153` en `185.199.111.153`. Zet daarnaast een
+  `CNAME` voor `www` naar `morgenacademy.github.io`, dan werkt die ook.
+
+**2. Het domein in de repo.** Zet het in `public/CNAME`, precies één regel,
+zonder `https://` en zonder slash:
+
+```bash
+echo "wissels.jouwdomein.nl" > public/CNAME
+```
+
+Dat bestand doet twee dingen. GitHub Pages leest het om te weten welk domein bij
+deze site hoort, en `vite.config.ts` leest het om het basispad op `/` te zetten
+in plaats van `/hockeywisselapp/`. Dat tweede is niet cosmetisch: met een eigen
+domein staat de app op de root, en zonder die omschakeling zoekt de pagina haar
+JavaScript op een pad dat er niet is — een wit scherm. Om diezelfde reden draait
+`npm run dev` dan ook op `http://localhost:5173/` in plaats van op
+`/hockeywisselapp/`.
+
+**3. Publiceren.** Push naar de standaardbranch; de workflow bouwt en zet het
+online. Zet daarna in **Settings → Pages** *Enforce HTTPS* aan zodra dat kan —
+het certificaat wordt pas uitgegeven als de DNS is doorgekomen, wat van een paar
+minuten tot een uur kan duren. Tot die tijd kan de browser klagen over de
+verbinding; dat gaat vanzelf over.
+
+De github.io-URL blijft daarnaast gewoon werken, dus je hebt altijd een adres dat
+het doet als het domein nog aan het doorkomen is.
 
 ## De selectie aanpassen
 
