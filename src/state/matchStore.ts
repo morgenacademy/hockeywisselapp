@@ -43,7 +43,7 @@ export interface WedstrijdStand {
   versie: number
 }
 
-const OPSLAG_SLEUTEL = 'hockeywissel.wedstrijd.v1'
+export const OPSLAG_SLEUTEL = 'hockeywissel.wedstrijd.v1'
 
 /**
  * Vorm van de opgeslagen stand. **Ophogen zodra een veld bij komt, verdwijnt of

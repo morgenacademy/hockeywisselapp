@@ -1,0 +1,46 @@
+# Netlify bouwt en publiceert bij elke push; er is geen Actions-workflow meer
+# die dat doet. De testworkflow in .github/ blijft wel draaien, want die zegt
+# iets anders: of de roosterlogica nog klopt.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # De app draait op de root van het domein, niet op /hockeywisselapp/ zoals
+  # bij GitHub Pages. Vite zet dit door naar de asset-verwijzingen én naar
+  # start_url en scope in het manifest.
+  BASE_PATH = "/"
+
+# De echte app: alleen de productiebranch.
+[context.production]
+  command = "npm run controleer:productie"
+
+# De branch `oefen` krijgt zijn eigen adres met de snelheidsbalk erin, zodat je
+# een hele wedstrijd in een minuut kunt doorspelen zonder de app aan te raken
+# die op zaterdag gebruikt wordt.
+[context.oefen]
+  command = "npm run build:oefen"
+
+# De service worker bepaalt wat een geïnstalleerde app te zien krijgt. Wordt
+# die gecachet, dan blijft een telefoon op een oude versie hangen en is er van
+# buitenaf niets meer aan te doen -- precies het probleem dat een PWA berucht
+# maakt. Vandaar: nooit cachen.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/registerSW.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# De bestandsnamen in /assets/ bevatten een hash van de inhoud, dus een
+# gewijzigd bestand krijgt een nieuwe naam. Die mogen dus voor altijd blijven
+# staan.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

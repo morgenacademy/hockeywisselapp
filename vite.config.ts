@@ -2,8 +2,9 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Base path targets GitHub Pages at /<repo>/; override with BASE_PATH for other hosts.
-const base = process.env.BASE_PATH ?? '/hockeywisselapp/'
+// De app draait op de root van zijn domein. Wie hem onder een submap zet --
+// GitHub Pages serveert een project op /<repo>/ -- geeft dat mee met BASE_PATH.
+const base = process.env.BASE_PATH ?? '/'
 
 // Voor de gehoste testversie wordt alles in één HTML-bestand gebundeld; daar
 // hoort geen service worker bij.

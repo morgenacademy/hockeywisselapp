@@ -1,9 +1,12 @@
 name: Test
 
+# Netlify bouwt en publiceert; deze workflow zegt iets anders, namelijk of de
+# roosterlogica nog klopt. Daarom draait hij op élke branch, main incluis --
+# eerder werd main overgeslagen omdat de deploy-workflow de tests daar al deed,
+# en die is er niet meer.
 on:
   pull_request:
   push:
-    branches-ignore: [main]
 
 jobs:
   test:
@@ -17,6 +20,8 @@ jobs:
       - run: npm ci
       - run: npx tsc -b
       - run: npm test
+      # Een versnelde klok die op zaterdag per ongeluk aan staat is erger dan
+      # geen oefenmodus, dus dit faalt liever de build.
       - name: Controleer dat de oefenmodus niet in de productiebuild zit
         run: |
           npm run build

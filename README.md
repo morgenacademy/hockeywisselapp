@@ -272,7 +272,7 @@ klok die op zaterdag per ongeluk aan staat is erger dan geen oefenmodus.
 
 ## Vastzitten kan niet
 
-Twee dingen zorgen dat je altijd verder kunt:
+Drie dingen zorgen dat je altijd verder kunt:
 
 - **De opgeslagen wedstrijd heeft een versienummer.** Verandert de vorm van die
   stand, dan wordt een oude stand genegeerd in plaats van half teruggezet. Zonder
@@ -281,6 +281,13 @@ Twee dingen zorgen dat je altijd verder kunt:
 - **Vanaf het wedstrijdscherm kun je terug** met *Wijzig opstelling*, zonder de
   wedstrijd weg te gooien. Op het aanwezigheidsscherm staat dan *Terug naar de
   lopende wedstrijd*.
+- **Een fout in een scherm geeft geen witte pagina.** Het lezen van de opslag was
+  al afgeschermd, maar dat dekt alleen het opstarten. Gaat er tijdens de
+  wedstrijd iets mis in het tekenen van een scherm, dan haalt React zonder
+  vangnet de hele boom weg -- midden in een kwart, met een team dat op een wissel
+  wacht. `Vangnet` toont in plaats daarvan twee uitwegen: *Opnieuw proberen*
+  (de wedstrijd blijft staan, genoeg bij een eenmalige fout) en *Alles wissen*
+  (voor als de fout in de opgeslagen stand zelf zit).
 
 Onderaan het aanwezigheidsscherm staat **Opnieuw beginnen**, met drie acties die
 elk zeggen wat er weggaat:
@@ -300,7 +307,7 @@ mee overweg kan.
 
 ```bash
 npm install
-npm run dev                      # http://localhost:5173/hockeywisselapp/
+npm run dev                      # http://localhost:5173/
 VITE_OEFENMODUS=1 npm run dev    # met oefenwedstrijd
 npm test                         # de rooster- en kloklogica
 npm run build
@@ -315,19 +322,32 @@ De logica zit in `src/domain/` en is los te testen zonder browser:
 - `assignment.ts` — koppeling (Kuhn) en toewijzing (Hongaars)
 - `clock.ts` — kwarten, blokken en tijd
 
-Publiceren naar GitHub Pages kan op twee manieren; kies er één in
-**Settings → Pages → Source**:
+## Publiceren
 
-- **GitHub Actions** — de workflow in `.github/workflows/deploy.yml` bouwt en
-  publiceert bij elke push naar de standaardbranch. Voorkeur: altijd actueel.
-- **Deploy from a branch → `gh-pages`** — die branch bevat de gebouwde app.
-  Korter lijstje om uit te kiezen, maar hij moet met de hand ververst worden:
-  `npm run build` en de inhoud van `dist/` naar `gh-pages` pushen. Daarna staat de app
-op `https://morgenacademy.github.io/hockeywisselapp/` — zonder login,
-installeerbaar op je beginscherm en offline bruikbaar.
+De app staat op **https://hockeywisselapp.nl** — zonder login, installeerbaar op
+je beginscherm en offline bruikbaar. Netlify bouwt en publiceert bij elke push
+naar `main`; de instellingen staan in `netlify.toml` en niet in het dashboard,
+zodat je in deze repo kunt zien wat er gebeurt.
 
-De workflow weigert te publiceren als de oefenmodus per ongeluk in de
-productiebuild zit.
+Drie dingen die die configuratie regelt:
+
+- **`BASE_PATH=/`** — de app draait op de root van het domein. Vite zet dat door
+  naar de asset-verwijzingen én naar `start_url` en `scope` in het manifest.
+- **De productiebranch bouwt met `npm run controleer:productie`**, die de build
+  daarna doorzoekt op de oefenmodus en faalt als hij er in zit. Staat
+  `VITE_OEFENMODUS` per ongeluk in de omgeving, dan komt er dus geen versnelde
+  klok live maar een rode build.
+- **`sw.js` wordt nooit gecachet.** Die bepaalt wat een geïnstalleerde app te
+  zien krijgt; blijft hij hangen, dan zit een telefoon op een oude versie vast
+  en is daar van buitenaf niets meer aan te doen.
+
+Een branch die `oefen` heet krijgt zijn eigen adres, gebouwd met de
+snelheidsbalk erin. Daarmee speel je een hele wedstrijd in een minuut door
+zonder de app aan te raken die op zaterdag gebruikt wordt.
+
+Wil je de app ergens neerzetten waar je geen map met losse bestanden kwijt kunt,
+dan bundelt `npm run bundel` alles tot één zelfstandig HTML-bestand van ongeveer
+205 kB (`npm run bundel:oefen` voor de versie met de snelheidsbalk).
 
 ## De selectie aanpassen
 
