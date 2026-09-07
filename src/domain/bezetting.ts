@@ -1,4 +1,9 @@
-import { AANTAL_BLOKKEN } from './clock'
+import {
+  AANTAL_KWARTEN,
+  MAX_BLOKKEN_PER_KWART,
+  MIN_BLOKKEN_PER_KWART,
+  aantalBlokken,
+} from './clock'
 import { AANTAL_VELDPOSITIES, LINIE_NAAM, POSITIES, type Linie } from './formation'
 import { centraalLinies, kanCentraal, magOpPositie, type Speelster } from './players'
 
@@ -7,11 +12,13 @@ import { centraalLinies, kanCentraal, magOpPositie, type Speelster } from './pla
  *
  * Twee eisen, en het advies is de hoogste van de twee.
  *
- * **1. Genoeg speeltijd om de plekken te vullen.** Bij V veldspeelsters speelt
- * iedereen 120/V van de twaalf blokken. Een groep van k plekken moet samen
- * k × 12 blokken vullen:
+ * **1. Genoeg speeltijd om de plekken te vullen.** Bij V veldspeelsters en B
+ * blokken speelt iedereen 10B/V blokken. Een groep van k plekken moet samen
+ * k × B blokken vullen:
  *
- *     P × 120/V ≥ 12k   ⇒   P ≥ k × V / 10
+ *     P × 10B/V ≥ Bk   ⇒   P ≥ k × V / 10
+ *
+ * De B valt weg: dit advies staat dus los van hoe vaak je wisselt.
  *
  * Oftewel: een positiegroep moet minstens haar eigen aandeel van de selectie
  * zijn. Vier van de tien plekken achterin? Dan minstens vier tiende van je
@@ -141,7 +148,36 @@ export function heeftTekort(advies: GroepAdvies[]): boolean {
 }
 
 /** Hoeveel blokken speelt iedereen bij dit aantal veldspeelsters? */
-export function blokkenPerSpeelster(veldSpeelsters: number): number {
+export function blokkenPerSpeelster(veldSpeelsters: number, blokkenPerKwart: number): number {
   if (veldSpeelsters <= 0) return 0
-  return (AANTAL_BLOKKEN * AANTAL_VELDPOSITIES) / veldSpeelsters
+  return (aantalBlokken(blokkenPerKwart) * AANTAL_VELDPOSITIES) / veldSpeelsters
+}
+
+/**
+ * Hoe vaak zou je met deze opkomst moeten wisselen?
+ *
+ * De rekensom is de rotatie zelf. Per blok blijven er `V - 10` speelsters over
+ * voor de bank, dus na `V / (V - 10)` blokken is iedereen één keer aan de beurt
+ * geweest. Past die ronde niet in de wedstrijd, dan zijn er speelsters die
+ * helemaal niet rusten terwijl anderen dubbel rusten -- precies de scheve
+ * verdeling waar de app voor bedoeld is. Daarom: zoveel blokken per kwart dat
+ * die ronde er minstens één keer in past.
+ *
+ *   11 aanwezig (10 in het veld + keeper) -> 1 wisselspeelster, ronde van 11
+ *     blokken, dus 3 blokken per kwart: 2x per kwart wisselen.
+ *   13 aanwezig -> 3 wisselspeelsters, ronde van ruim 4 blokken, dus 2 blokken
+ *     per kwart: 1x per kwart.
+ *
+ * Twee grenzen eromheen. Met precies tien veldspeelsters valt er niets te
+ * wisselen en blijft er één blok per kwart over: je wisselt alleen in de rust.
+ * En zodra er wél gewisseld wordt zijn het er minstens twee, want een blok van
+ * een heel kwart betekent dat iemand 17:30 aan de kant staat -- dat is voor een
+ * speelster van deze leeftijd te lang om aan de kant te blijven zitten.
+ */
+export function aanbevolenBlokkenPerKwart(veldSpeelsters: number): number {
+  if (veldSpeelsters <= AANTAL_VELDPOSITIES) return MIN_BLOKKEN_PER_KWART
+  const wisselspeelsters = veldSpeelsters - AANTAL_VELDPOSITIES
+  const blokkenVoorEenRonde = veldSpeelsters / wisselspeelsters
+  const perKwart = Math.ceil(blokkenVoorEenRonde / AANTAL_KWARTEN)
+  return Math.min(MAX_BLOKKEN_PER_KWART, Math.max(2, perKwart))
 }

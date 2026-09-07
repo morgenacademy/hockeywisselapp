@@ -1,4 +1,4 @@
-import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd, kwartVanBlok } from '../domain/clock'
+import { aantalBlokken, blokkenNaarSeconden, formatTijd, kwartVanBlok } from '../domain/clock'
 import { POSITIE_CODES } from '../domain/formation'
 import type { Speelster } from '../domain/players'
 import type { Rooster } from '../domain/schedule'
@@ -9,10 +9,14 @@ interface Props {
   rooster: Rooster
   keeperId: string | null
   huidigBlok: number
+  blokkenPerKwart: number
   onTerug: () => void
 }
 
-export function Overzicht({ aanwezigen, rooster, keeperId, huidigBlok, onTerug }: Props) {
+export function Overzicht({
+  aanwezigen, rooster, keeperId, huidigBlok, blokkenPerKwart, onTerug,
+}: Props) {
+  const totaalBlokken = aantalBlokken(blokkenPerKwart)
   const perId = new Map(aanwezigen.map((s) => [s.id, s]))
   const veld = aanwezigen.filter((s) => s.id !== keeperId)
 
@@ -31,7 +35,9 @@ export function Overzicht({ aanwezigen, rooster, keeperId, huidigBlok, onTerug }
       <Kop />
       <header className="scherm-kop">
         <h1>Overzicht</h1>
-        <p className="tel">Speeltijd en positie per blok. Blok {huidigBlok + 1} loopt nu.</p>
+        <p className="tel">
+          Speeltijd en positie per blok. Blok {huidigBlok + 1} van {totaalBlokken} loopt nu.
+        </p>
       </header>
 
       <div className="tabelwikkel">
@@ -39,10 +45,10 @@ export function Overzicht({ aanwezigen, rooster, keeperId, huidigBlok, onTerug }
           <thead>
             <tr>
               <th className="naamkolom">Speelster</th>
-              {Array.from({ length: AANTAL_BLOKKEN }, (_, i) => (
+              {Array.from({ length: totaalBlokken }, (_, i) => (
                 <th key={i} className={i === huidigBlok ? 'nu' : ''}>
                   <span className="blokkop">{i + 1}</span>
-                  <span className="kwartkop">K{kwartVanBlok(i)}</span>
+                  <span className="kwartkop">K{kwartVanBlok(i, blokkenPerKwart)}</span>
                 </th>
               ))}
               <th>Totaal</th>
@@ -52,7 +58,7 @@ export function Overzicht({ aanwezigen, rooster, keeperId, huidigBlok, onTerug }
             {gesorteerd.map((speelster) => (
               <tr key={speelster.id}>
                 <th className="naamkolom">{speelster.naam}</th>
-                {Array.from({ length: AANTAL_BLOKKEN }, (_, i) => {
+                {Array.from({ length: totaalBlokken }, (_, i) => {
                   const positie = positieVan(i, speelster.id)
                   return (
                     <td
@@ -63,16 +69,16 @@ export function Overzicht({ aanwezigen, rooster, keeperId, huidigBlok, onTerug }
                     </td>
                   )
                 })}
-                <td className="totaal">{formatTijd(blokkenNaarSeconden(rooster.gespeeld[speelster.id] ?? 0))}</td>
+                <td className="totaal">{formatTijd(blokkenNaarSeconden(rooster.gespeeld[speelster.id] ?? 0, blokkenPerKwart))}</td>
               </tr>
             ))}
             {keeperId && (
               <tr className="keeperrij">
                 <th className="naamkolom">{perId.get(keeperId)?.naam}</th>
-                {Array.from({ length: AANTAL_BLOKKEN }, (_, i) => (
+                {Array.from({ length: totaalBlokken }, (_, i) => (
                   <td key={i} className="speelt">GK</td>
                 ))}
-                <td className="totaal">{formatTijd(blokkenNaarSeconden(AANTAL_BLOKKEN))}</td>
+                <td className="totaal">{formatTijd(blokkenNaarSeconden(totaalBlokken, blokkenPerKwart))}</td>
               </tr>
             )}
           </tbody>

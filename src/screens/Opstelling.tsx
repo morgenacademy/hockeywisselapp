@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Field, type VeldSpeler } from '../components/Field'
 import { Kop } from '../components/Kop'
+import { Ruilpaneel } from '../components/Ruilpaneel'
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
 import type { Opstelling as OpstellingType } from '../domain/schedule'
@@ -34,7 +35,6 @@ export function Opstelling({
   const [gekozen, zetGekozen] = useState<Positie | null>(null)
   const perId = new Map(aanwezigen.map((s) => [s.id, s]))
   const veld = aanwezigen.filter((s) => s.id !== keeperId)
-  const naam = (id: string) => perId.get(id)?.naam ?? '?'
   const kort = (id: string) => {
     const s = perId.get(id)
     return s ? korteNaam(s, aanwezigen) : '?'
@@ -54,11 +54,12 @@ export function Opstelling({
         : !inLinie(speelster, positie)
           ? ('buitenLinie' as const)
           : undefined,
-      gewisseld: vastgezet[positie] !== undefined,
     }]
   })
 
-  const aantalVast = POSITIE_CODES.filter((p) => vastgezet[p]).length
+  // Zodra de coach één plek verzet wordt de hele opstelling vastgelegd, zodat
+  // er verder niets meer verschuift. Dat is dus een ja/nee, geen telling.
+  const zelfGezet = POSITIE_CODES.some((p) => vastgezet[p])
   const opVeld = new Set(POSITIE_CODES.map((p) => voorstel[p]).filter(Boolean) as string[])
   const bank = veld.filter((s) => !opVeld.has(s.id))
 
@@ -71,10 +72,10 @@ export function Opstelling({
           Dit is het voorstel van de app. Tik op een plek om er iemand anders neer te
           zetten; de rest van de wedstrijd rekent daaromheen.
         </p>
-        {aantalVast > 0 && (
+        {zelfGezet && (
           <p className="tel">
-            <strong>{aantalVast}</strong> {aantalVast === 1 ? 'plek' : 'plekken'} zelf gezet
-            (groen omrand).
+            Je hebt deze opstelling zelf gezet. De app laat hem precies zo staan en
+            rekent de rest van de wedstrijd eromheen.
           </p>
         )}
       </header>
@@ -87,40 +88,16 @@ export function Opstelling({
       />
 
       {gekozen && (
-        <div className="ruilpaneel">
-          <p>
-            <strong>{positieInfo(gekozen).naam}</strong>
-            {voorstel[gekozen] ? ` — nu ${naam(voorstel[gekozen]!)}` : ' — leeg'}
-          </p>
-          <p className="tel">Wie zet je hier neer?</p>
-          <div className="chips">
-            {veld
-              .slice()
-              .sort((a, b) => {
-                const rang = (s: Speelster) =>
-                  !magOpPositie(s, gekozen) ? 2 : inLinie(s, gekozen) ? 0 : 1
-                return rang(a) - rang(b) || a.naam.localeCompare(b.naam)
-              })
-              .map((speelster) => {
-                const mag = magOpPositie(speelster, gekozen)
-                return (
-                  <button
-                    key={speelster.id}
-                    className={`chip ${mag ? '' : 'verboden'} ${inLinie(speelster, gekozen) ? 'eigen' : 'anders'}`}
-                    onClick={() => {
-                      onZet(gekozen, speelster.id)
-                      zetGekozen(null)
-                    }}
-                    disabled={!mag}
-                    title={mag ? undefined : 'Kan hier niet centraal staan'}
-                  >
-                    {speelster.naam}
-                  </button>
-                )
-              })}
-          </div>
-          <button className="knop klein" onClick={() => zetGekozen(null)}>Annuleren</button>
-        </div>
+        <Ruilpaneel
+          positie={gekozen}
+          huidigeId={voorstel[gekozen] ?? null}
+          kandidaten={veld}
+          onKies={(id) => {
+            onZet(gekozen, id)
+            zetGekozen(null)
+          }}
+          onAnnuleer={() => zetGekozen(null)}
+        />
       )}
 
       <section className="bank">
@@ -140,7 +117,7 @@ export function Opstelling({
 
       <div className="knoppenrij">
         <button className="knop klein" onClick={onTerug}>Terug</button>
-        {aantalVast > 0 && (
+        {zelfGezet && (
           <button className="knop klein" onClick={onWis}>Voorstel van de app</button>
         )}
         <button className="knop groot" onClick={onVerder}>Wedstrijd starten</button>
