@@ -77,7 +77,7 @@ export function KeeperKiezen({ aanwezigen, keeperId, onKies, onTerug, onVerder }
       <div className="knoppenrij">
         <button className="knop klein" onClick={onTerug}>Terug</button>
         <button className="knop groot" disabled={!keeperId} onClick={onVerder}>
-          Verder: centrale posities
+          Verder: wisselmomenten
         </button>
       </div>
     </div>

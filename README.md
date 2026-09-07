@@ -30,19 +30,65 @@ iconen lopen anders bij elke kleurwijziging achter.
 
 ## Hoe het rekent
 
-Een wedstrijd is 4 × 17:30. Elk kwart valt uiteen in **3 blokken van 5:50**, dus
-12 blokken in totaal met 10 veldplekken = **120 speelster-blokken** te verdelen.
+Een wedstrijd is 4 × 17:30, en elk kwart valt uiteen in gelijke **blokken**. Op
+een blokgrens ligt een wisselmoment. Hoeveel blokken een kwart heeft kies je
+zelf, vóór de wedstrijd:
 
-| Aanwezig | Veldspeelsters | Speeltijd per speelster | Verschil |
-| --- | --- | --- | --- |
-| 16 | 15 | 46:40 | geen |
-| 15 | 14 | 52:30 of 46:40 | 5:50 |
-| 14 | 13 | 58:20 of 52:30 | 5:50 |
-| 13 | 12 | 58:20 | geen |
-| 12 | 11 | 64:10 of 58:20 | 5:50 |
-| 11 | 10 | 70:00 | geen wissels |
+| Keuze | Blokduur | Blokken in de wedstrijd |
+| --- | --- | --- |
+| Alleen in de rust | 17:30 | 4 |
+| 1× per kwart | 8:45 | 8 |
+| 2× per kwart | 5:50 | 12 |
+| 3× per kwart | 4:23 | 16 |
 
-Nooit meer dan één blok verschil.
+Het getal telt de wissels *binnen* een kwart; in de rust wissel je sowieso, want
+daar staat de klok stil.
+
+**De totale speeltijd verandert daar niet van.** Er zijn altijd 10 veldplekken
+gedurende 70 minuten, dus 700 speelster-minuten te verdelen — hoe je ze in
+blokken knipt maakt voor het totaal niets uit. Wat de keuze wél bepaalt is hoe
+lang één beurt duurt, en dus hoe lang iemand achter elkaar aan de kant staat.
+
+| Aanwezig | Veldspeelsters | Speeltijd per speelster |
+| --- | --- | --- |
+| 16 | 15 | 46:40 |
+| 15 | 14 | 50:00 |
+| 14 | 13 | 53:51 |
+| 13 | 12 | 58:20 |
+| 12 | 11 | 63:38 |
+| 11 | 10 | 70:00 (geen wissels) |
+
+Nooit meer dan één blok verschil tussen de speelster die het meest en het minst
+speelt. Met kortere blokken is dat verschil dus ook kleiner.
+
+### Wat de app adviseert
+
+Per blok blijven er `V − 10` speelsters over voor de bank, dus na `V / (V − 10)`
+blokken is iedereen één keer aan de beurt geweest. Past die ronde niet in de
+wedstrijd, dan zijn er speelsters die helemaal niet rusten terwijl anderen dubbel
+rusten. Het advies is daarom: zoveel blokken per kwart dat die ronde er minstens
+één keer in past.
+
+| Aanwezig | Veldspeelsters | Advies |
+| --- | --- | --- |
+| 11 | 10 | alleen in de rust (niemand hoeft te rusten) |
+| 12 | 11 | 2× per kwart |
+| 13 t/m 16 | 12 t/m 15 | 1× per kwart |
+
+Met één wisselspeelster moet je vaak wisselen om haar aan spelen te krijgen; met
+vijf hoeft dat veel minder. En zodra er gewisseld wordt zijn het er minstens
+één per kwart: een blok van een heel kwart betekent dat iemand 17:30 achter
+elkaar aan de kant staat.
+
+Het blijft een advies. De coach kent de tegenstander, het weer en de benen van
+zijn ploeg, dus elke keuze is gewoon aan te tikken — met de minuten erbij, want
+dát is het getal waar je langs de lijn iets aan hebt. Zolang je zelf niets kiest
+schuift het advies mee als er nog iemand binnenkomt of afzegt; tik je een keuze
+aan, dan blijft die staan.
+
+Het ritme mag ook nog wijzigen als de wedstrijd al loopt. Wat er gespeeld is
+verhuist dan mee naar de nieuwe indeling — elk nieuw blok pakt het oude blok dat
+op datzelfde moment liep — zodat de speeltijd blijft kloppen.
 
 ## Opstelling 4-3-3
 
@@ -147,8 +193,9 @@ gespeeld.
 
 Nora en Kiki kunnen allebei op het centrale middenveld, maar er is één plek. De
 rustrotatie zette ze daardoor om en om op de bank: precies in de blokken waarin
-de een speelde, rustte de ander. Bij acht van de twaalf blokken elk stonden ze
-dan maar vier blokken samen in het veld — het rekenkundige minimum.
+de een speelde, rustte de ander. Bij acht van de twaalf blokken elk — het
+voorbeeld rekent met 2× per kwart — stonden ze dan maar vier blokken samen in het
+veld, het rekenkundige minimum.
 
 Een reparatiestap laat hun rustbeurten samenvallen, waardoor ze acht blokken
 samen spelen — het maximum — en degene die niet centraal staat gewoon op links-
@@ -167,16 +214,19 @@ wel wie er centraal ínvalt als er een plek vrijkomt.
 Op je telefoon: open de app, en voeg hem toe aan je beginscherm. Daarna werkt hij
 ook zonder bereik langs het veld.
 
-1. **Aanwezigheid** — vink aan wie er is (11 t/m 16), en zet zo nodig bij iemand
-   **centraal** aan.
+1. **Aanwezigheid** — vink aan wie er is, en zet zo nodig bij iemand **centraal**
+   aan. Staat er een invalster naast je die niet in de selectie zit, dan zet je
+   haar er met **Iemand erbij** zo bij; dat kan ook nog als de wedstrijd loopt.
 2. **Keeper** — zij speelt de hele wedstrijd. De app waarschuwt als je keuze de
    centrale posities onvulbaar maakt.
-3. **Centrale posities** — zet de speelsters op sterkte. Bovenaan staat het
+3. **Wisselmomenten** — hoe vaak wissel je per kwart? De app adviseert op basis
+   van de opkomst en noemt de blokduur in minuten; je tikt aan wat je zelf wilt.
+4. **Centrale posities** — zet de speelsters op sterkte. Bovenaan staat het
    vaakst centraal; speeltijd blijft leidend, dus iedereen komt aan de beurt.
-4. **Startopstelling** — het voorstel van de app, waarin je zelf plekken kunt
+5. **Startopstelling** — het voorstel van de app, waarin je zelf plekken kunt
    aanpassen. Wat je vastzet geldt voor het eerste blok; de rest van de wedstrijd
    rekent daaromheen.
-5. **Wedstrijd** — Start/Pauze, het veld met de opstelling, en een vooruitblik op
+6. **Wedstrijd** — Start/Pauze, het veld met de opstelling, en een vooruitblik op
    de volgende wissel. Speelsters die eraf moeten krijgen een rode rand met
    ERUIT; wie doorschuift krijgt SCHUIFT.
 
@@ -203,9 +253,26 @@ SCHUIFT    Lily le Blanc         van Rechtsmid naar Centrale middenveld
 ERIN       Suus Kimenai          op Rechtsmid
 ```
 
+### Zelf ingrijpen
+
 Tijdens de wedstrijd kun je altijd ingrijpen: tik op een speelster op het veld om
 haar te vervangen, of zet iemand op **eruit** bij een blessure of kaart. De app
 rekent de rest van de wedstrijd opnieuw uit; wat al gespeeld is blijft staan.
+
+Twee dingen die daarbij vastliggen:
+
+**Iedereen is te kiezen.** Ook wie een sleutelpositie normaal niet aankan, en ook
+buiten haar eigen linie. De app zet er wel een opmerking bij — *niet centraal*,
+*buiten linie* — en markeert het op het veld, maar ze houdt het niet tegen. Langs
+de lijn weet jij het beter dan de gegevens: er komt een invalster mee die niemand
+kent, of je ziet gewoon iets.
+
+**Verzet je één plek, dan verandert er verder niets.** Stond ze al in het veld,
+dan ruilen die twee van plek; kwam ze van de bank, dan gaat wie er stond naar de
+bank. De rest van dat blok blijft exact staan — de app legt het blok vast en
+rekent alleen de blokken die nog komen opnieuw uit. Onder het veld staat dan
+*"Deze opstelling heb je zelf gezet"*, met een knop om het blok weer aan de app
+terug te geven.
 
 ## Hoeveel speelsters heb je nodig per positie?
 
@@ -248,7 +315,7 @@ gevallen een schema zonder linieproblemen op.
 
 Om de app te beoordelen zonder 70 minuten te wachten is er een oefenmodus: een
 balk met 1×, 10× en 60×. Op 60× loopt een hele wedstrijd in ruim een minuut, met
-alle elf wisselmomenten, het belletje en de kettingen.
+alle wisselmomenten, het belletje en de kettingen.
 
 Die zit **niet** in de echte app. De scheiding zit in de build:
 
@@ -362,3 +429,11 @@ wijzigingen worden lokaal bewaard en overleven een nieuwe wedstrijd. Dit bestand
 is de standaard waar *Alles wissen* naar terugvalt — daar hoef je dus alleen in
 als de vaste selectie zelf verandert, bijvoorbeeld als er iemand bij het team
 komt.
+
+Voor een invalster hoef je hier níét in. Op het aanwezigheidsscherm zet je haar
+met **Iemand erbij** in de lijst: ze komt aanwezig binnen met alle drie de linies
+en zonder centrale plek — de veilige aanname voor iemand die je niet kent — en je
+stelt haar linies en centraal daarna bij met dezelfde knoppen als bij de rest.
+Met *weghalen* is ze weer weg. Zulke speelsters horen bij deze telefoon en niet
+bij het team, dus ze overleven wel een nieuwe wedstrijd en het terugzetten van de
+linies, maar niet *Alles wissen*.

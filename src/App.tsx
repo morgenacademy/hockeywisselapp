@@ -5,6 +5,8 @@ import { Opstelling } from './screens/Opstelling'
 import { Overzicht } from './screens/Overzicht'
 import { Sterkte } from './screens/Sterkte'
 import { Wedstrijd } from './screens/Wedstrijd'
+import { Wisselmomenten } from './screens/Wisselmomenten'
+import { aanbevolenBlokkenPerKwart } from './domain/bezetting'
 import { standaardSterkte, useWedstrijd } from './state/matchStore'
 
 export default function App() {
@@ -31,6 +33,24 @@ export default function App() {
     }
   }, [aanwezigen, stand.keeperId, stand.sterkteAchter, stand.sterkteMidden, wijzig])
 
+  // Zolang de coach het wisselritme niet zelf heeft gekozen volgt de app haar
+  // eigen advies -- ook als er na de eerste keer nog iemand binnenkomt of
+  // afzegt. Tikt hij een keuze aan, dan blijft die staan en doet dit niets meer.
+  const veldSpeelsters = aanwezigen.filter((s) => s.id !== stand.keeperId).length
+  const wisselAdvies = aanbevolenBlokkenPerKwart(veldSpeelsters)
+  const { volgWisselAdvies } = w
+  useEffect(() => {
+    if (stand.wisselZelfGekozen || !stand.keeperId) return
+    if (stand.blokkenPerKwart === wisselAdvies) return
+    volgWisselAdvies(wisselAdvies)
+  }, [
+    stand.wisselZelfGekozen,
+    stand.keeperId,
+    stand.blokkenPerKwart,
+    wisselAdvies,
+    volgWisselAdvies,
+  ])
+
   if (stand.fase === 'aanwezigheid') {
     return (
       <Aanwezigheid
@@ -48,6 +68,8 @@ export default function App() {
         onCentraal={w.zetCentraal}
         onLinie={w.zetLinie}
         onHerstelSelectie={w.herstelSelectie}
+        onVoegToe={w.voegSpeelsterToe}
+        onVerwijder={w.verwijderSpeelster}
         onNieuweWedstrijd={w.herstart}
         onWisAlles={w.wisAlles}
         onVerder={() => wijzig({ fase: 'keeper' })}
@@ -68,6 +90,21 @@ export default function App() {
         keeperId={stand.keeperId}
         onKies={(id) => wijzig({ keeperId: id })}
         onTerug={() => wijzig({ fase: 'aanwezigheid' })}
+        onVerder={() => wijzig({ fase: 'wisselmomenten' })}
+      />
+    )
+  }
+
+  if (stand.fase === 'wisselmomenten') {
+    return (
+      <Wisselmomenten
+        aanwezigen={aanwezigen}
+        keeperId={stand.keeperId}
+        blokkenPerKwart={stand.blokkenPerKwart}
+        gestart={stand.kwart > 1 || stand.secondenInKwart > 0}
+        onZet={w.zetBlokkenPerKwart}
+        onVolgAdvies={w.volgWisselAdvies}
+        onTerug={() => wijzig({ fase: 'keeper' })}
         onVerder={() => wijzig({ fase: 'sterkte' })}
       />
     )
@@ -81,7 +118,7 @@ export default function App() {
         achter={stand.sterkteAchter}
         midden={stand.sterkteMidden}
         onZet={(achter, midden) => wijzig({ sterkteAchter: achter, sterkteMidden: midden })}
-        onTerug={() => wijzig({ fase: 'keeper' })}
+        onTerug={() => wijzig({ fase: 'wisselmomenten' })}
         onVerder={() => wijzig({ fase: 'opstelling' })}
       />
     )
@@ -109,6 +146,7 @@ export default function App() {
         rooster={w.rooster}
         keeperId={stand.keeperId}
         huidigBlok={w.huidigBlok}
+        blokkenPerKwart={stand.blokkenPerKwart}
         onTerug={() => zetToonOverzicht(false)}
       />
     )
@@ -122,6 +160,7 @@ export default function App() {
       uitgevallen={stand.uitgevallen}
       kwart={stand.kwart}
       secondenInKwart={w.secondenInKwart}
+      blokkenPerKwart={stand.blokkenPerKwart}
       loopt={stand.loopt}
       kwartVoorbij={w.kwartVoorbij}
       huidigBlok={w.huidigBlok}
@@ -132,6 +171,8 @@ export default function App() {
       onVolgendBlok={w.volgendBlok}
       onUitgevallen={w.zetUitgevallen}
       onZetOpPositie={w.zetOpPositie}
+      onLaatAppBepalen={w.wisVastgezet}
+      vastgezet={stand.vastgezet}
       onAlarmGezien={w.markeerAlarm}
       snelheid={stand.snelheid ?? 1}
       onSnelheid={w.zetSnelheid}

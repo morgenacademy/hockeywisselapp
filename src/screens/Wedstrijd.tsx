@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Clock } from '../components/Clock'
 import { Field, type VeldSpeler } from '../components/Field'
+import { Ruilpaneel } from '../components/Ruilpaneel'
 import { SubOverlay, Wisselketen } from '../components/SubOverlay'
-import { AANTAL_BLOKKEN, blokkenNaarSeconden, formatTijd, kwartVanBlok } from '../domain/clock'
+import {
+  aantalBlokken,
+  blokSeconden,
+  blokkenNaarSeconden,
+  formatTijd,
+  kwartVanBlok,
+} from '../domain/clock'
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
 import { wisselKetens, wisselOverzicht, type Rooster } from '../domain/schedule'
@@ -23,6 +30,7 @@ interface Props {
   uitgevallen: string[]
   kwart: number
   secondenInKwart: number
+  blokkenPerKwart: number
   loopt: boolean
   kwartVoorbij: boolean
   huidigBlok: number
@@ -33,6 +41,10 @@ interface Props {
   onVolgendBlok: () => void
   onUitgevallen: (id: string, uit: boolean) => void
   onZetOpPositie: (blok: number, positie: Positie, id: string | null) => void
+  /** Geeft een blok terug aan de app, zodat het voorstel weer geldt. */
+  onLaatAppBepalen: (blok: number) => void
+  /** Welke blokken de coach zelf heeft vastgezet. */
+  vastgezet: Record<number, unknown>
   onAlarmGezien: (blok: number) => void
   onOverzicht: () => void
   onVoorbereiding: () => void
@@ -44,9 +56,10 @@ interface Props {
 
 export function Wedstrijd(props: Props) {
   const {
-    aanwezigen, rooster, keeperId, uitgevallen, kwart, secondenInKwart, loopt,
-    kwartVoorbij, huidigBlok, alarmTot, onZetOpPositie, onAlarmGezien,
+    aanwezigen, rooster, keeperId, uitgevallen, kwart, secondenInKwart, blokkenPerKwart,
+    loopt, kwartVoorbij, huidigBlok, alarmTot, vastgezet, onZetOpPositie, onAlarmGezien,
   } = props
+  const totaalBlokken = aantalBlokken(blokkenPerKwart)
 
   const { speel, ontgrendel } = useAlarm()
   useWakeLock(loopt)
@@ -90,9 +103,11 @@ export function Wedstrijd(props: Props) {
   // de klok staat stil en iedereen staat bij elkaar, dus dat is het rustigste
   // moment om te wisselen. Dat verdient een eigen kop.
   const komendeIsRust =
-    volgendBlok !== null && kwartVanBlok(bewerkBlok + 1) !== kwartVanBlok(bewerkBlok)
+    volgendBlok !== null &&
+    kwartVanBlok(bewerkBlok + 1, blokkenPerKwart) !== kwartVanBlok(bewerkBlok, blokkenPerKwart)
   const huidigeIsRust =
-    vorigBlok !== null && kwartVanBlok(huidigBlok) !== kwartVanBlok(huidigBlok - 1)
+    vorigBlok !== null &&
+    kwartVanBlok(huidigBlok, blokkenPerKwart) !== kwartVanBlok(huidigBlok - 1, blokkenPerKwart)
 
   // Het alarm hoort bij de overgang naar een nieuw blok. `alarmTot` onthoudt
   // welk blok al is aangekondigd, zodat een refresh niet opnieuw belt.
@@ -174,12 +189,20 @@ export function Wedstrijd(props: Props) {
       <Clock
         kwart={kwart}
         secondenInKwart={secondenInKwart}
+        blokkenPerKwart={blokkenPerKwart}
         loopt={loopt}
         kwartVoorbij={kwartVoorbij}
         onStart={() => { ontgrendel(); props.onStart() }}
         onPauze={props.onPauze}
         onVolgendKwart={props.onVolgendKwart}
       />
+
+      <p className="tel wisselritme">
+        Wisselmoment elke {formatTijd(blokSeconden(blokkenPerKwart))}
+        {blokkenPerKwart > 1
+          ? ` — ${blokkenPerKwart - 1}× per kwart plus de rust`
+          : ' — alleen in de rust'}
+      </p>
 
       {blokWaarschuwingen.length > 0 && (
         <div className="melding waarschuwing">
@@ -189,7 +212,8 @@ export function Wedstrijd(props: Props) {
 
       {rust && (
         <p className="bewerkkop">
-          Opstelling voor kwart {kwartVanBlok(bewerkBlok)} — tik op een plek om te wijzigen
+          Opstelling voor kwart {kwartVanBlok(bewerkBlok, blokkenPerKwart)} — tik op een plek om te
+          wijzigen
         </p>
       )}
 
@@ -201,39 +225,29 @@ export function Wedstrijd(props: Props) {
       />
 
       {gekozenPositie && (
-        <div className="ruilpaneel">
-          <p>
-            <strong>{positieInfo(gekozenPositie).naam}</strong>
-            {gekozenSpeelster ? ` — nu ${naam(gekozenSpeelster)}` : ' — leeg'}
-          </p>
-          <p className="tel">Kies wie hier komt te staan:</p>
-          <div className="chips">
-            {aanwezigen
-              .filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))
-              // Eigen linie eerst, daarna wie er ook zou kunnen staan.
-              .sort((a, b) => {
-                const rang = (s: Speelster) =>
-                  !magOpPositie(s, gekozenPositie) ? 2 : inLinie(s, gekozenPositie) ? 0 : 1
-                return rang(a) - rang(b) || a.naam.localeCompare(b.naam)
-              })
-              .map((speelster) => {
-                const mag = magOpPositie(speelster, gekozenPositie)
-                const eigen = inLinie(speelster, gekozenPositie)
-                return (
-                  <button
-                    key={speelster.id}
-                    className={`chip ${mag ? '' : 'verboden'} ${eigen ? 'eigen' : 'anders'}`}
-                    onClick={() => zetSpeelster(speelster.id)}
-                    disabled={!mag}
-                    title={mag ? undefined : 'Kan hier niet centraal staan'}
-                  >
-                    {speelster.naam}
-                  </button>
-                )
-              })}
-          </div>
-          <button className="knop klein" onClick={() => zetGekozenPositie(null)}>Annuleren</button>
-        </div>
+        <Ruilpaneel
+          positie={gekozenPositie}
+          huidigeId={gekozenSpeelster ?? null}
+          kandidaten={aanwezigen.filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))}
+          onKies={zetSpeelster}
+          onLeeg={() => {
+            onZetOpPositie(bewerkBlok, gekozenPositie, null)
+            zetGekozenPositie(null)
+          }}
+          onAnnuleer={() => zetGekozenPositie(null)}
+        />
+      )}
+
+      {/* Zelf ingrijpen legt dit blok vast: de app rekent er wel omheen voor de
+          blokken die nog komen, maar verandert er zelf niets meer aan. Deze knop
+          is de weg terug. */}
+      {Boolean(vastgezet[bewerkBlok]) && (
+        <p className="melding vastgezet">
+          Deze opstelling heb je zelf gezet; de app laat hem staan.{' '}
+          <button className="knop mini" onClick={() => props.onLaatAppBepalen(bewerkBlok)}>
+            Laat de app dit blok bepalen
+          </button>
+        </p>
       )}
 
       {komendeKetens.length > 0 && (
@@ -293,9 +307,11 @@ export function Wedstrijd(props: Props) {
                 <li key={speelster.id} className={uit ? 'uitgevallen' : ''}>
                   <span className="rij-naam">{speelster.naam}</span>
                   <span className="balk">
-                    <span style={{ width: `${(blokken / AANTAL_BLOKKEN) * 100}%` }} />
+                    <span style={{ width: `${(blokken / totaalBlokken) * 100}%` }} />
                   </span>
-                  <span className="minuten">{formatTijd(blokkenNaarSeconden(blokken))}</span>
+                  <span className="minuten">
+                    {formatTijd(blokkenNaarSeconden(blokken, blokkenPerKwart))}
+                  </span>
                   <button
                     className={`knop mini ${uit ? '' : 'gevaar'}`}
                     onClick={() => props.onUitgevallen(speelster.id, !uit)}
@@ -309,7 +325,8 @@ export function Wedstrijd(props: Props) {
         </ul>
         {keeperId && (
           <p className="tel">
-            {naam(keeperId)} keept de hele wedstrijd ({formatTijd(blokkenNaarSeconden(AANTAL_BLOKKEN))}).
+            {naam(keeperId)} keept de hele wedstrijd (
+            {formatTijd(blokkenNaarSeconden(totaalBlokken, blokkenPerKwart))}).
           </p>
         )}
       </section>

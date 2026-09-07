@@ -1,8 +1,15 @@
-import { BLOKKEN_PER_KWART, KWART_SECONDEN, blokInKwart, formatTijd, secondenTotWissel } from '../domain/clock'
+import {
+  AANTAL_KWARTEN,
+  KWART_SECONDEN,
+  blokInKwart,
+  formatTijd,
+  secondenTotWissel,
+} from '../domain/clock'
 
 interface Props {
   kwart: number
   secondenInKwart: number
+  blokkenPerKwart: number
   loopt: boolean
   kwartVoorbij: boolean
   onStart: () => void
@@ -10,16 +17,19 @@ interface Props {
   onVolgendKwart: () => void
 }
 
-export function Clock({ kwart, secondenInKwart, loopt, kwartVoorbij, onStart, onPauze, onVolgendKwart }: Props) {
-  const totWissel = secondenTotWissel(secondenInKwart)
-  const blok = blokInKwart(secondenInKwart) + 1
+export function Clock({
+  kwart, secondenInKwart, blokkenPerKwart, loopt, kwartVoorbij,
+  onStart, onPauze, onVolgendKwart,
+}: Props) {
+  const totWissel = secondenTotWissel(secondenInKwart, blokkenPerKwart)
+  const blok = blokInKwart(secondenInKwart, blokkenPerKwart) + 1
   const bijna = totWissel <= 30 && !kwartVoorbij
 
   return (
     <div className={`klok ${bijna ? 'bijna' : ''} ${loopt ? 'loopt' : 'stil'}`}>
       <div className="klok-kop">
         <span className="kwart">Kwart {kwart}</span>
-        <span className="blokje">Blok {blok} van {BLOKKEN_PER_KWART}</span>
+        <span className="blokje">Blok {blok} van {blokkenPerKwart}</span>
       </div>
 
       <div className="klok-tijd">
@@ -35,7 +45,7 @@ export function Clock({ kwart, secondenInKwart, loopt, kwartVoorbij, onStart, on
 
       {kwartVoorbij ? (
         <button className="knop groot" onClick={onVolgendKwart}>
-          {kwart >= 4 ? 'Wedstrijd afgelopen' : `Start kwart ${kwart + 1}`}
+          {kwart >= AANTAL_KWARTEN ? 'Wedstrijd afgelopen' : `Start kwart ${kwart + 1}`}
         </button>
       ) : (
         <button className={`knop groot ${loopt ? 'pauze' : ''}`} onClick={loopt ? onPauze : onStart}>

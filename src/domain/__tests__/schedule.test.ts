@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
-  AANTAL_BLOKKEN,
-  BLOK_SECONDEN,
+  STANDAARD_BLOKKEN_PER_KWART,
   WEDSTRIJD_SECONDEN,
+  aantalBlokken,
+  blokSeconden,
   isKwartStart,
   kwartVanBlok,
 } from '../clock'
+
+/** Deze tests rekenen op de standaardindeling: drie blokken van 5:50 per kwart. */
+const BLOKKEN_PER_KWART = STANDAARD_BLOKKEN_PER_KWART
+const BLOK_SECONDEN = blokSeconden(BLOKKEN_PER_KWART)
+const AANTAL_BLOKKEN = aantalBlokken(BLOKKEN_PER_KWART)
 import { AANTAL_VELDPOSITIES, POSITIE_CODES, positieInfo, type Positie } from '../formation'
 import {
   SELECTIE,
@@ -754,11 +760,11 @@ describe('schuiven is het laatste redmiddel', () => {
         for (let i = 1; i < r.blokken.length; i++) {
           const aantalSchuiven = wisselOverzicht(r.blokken[i - 1], r.blokken[i]).verplaatst.length
           if (aantalSchuiven === 0) continue
-          if (isKwartStart(i)) {
+          if (isKwartStart(i, BLOKKEN_PER_KWART)) {
             bijRust += aantalSchuiven
           } else {
             inKwart += aantalSchuiven
-            perKwart[kwartVanBlok(i) - 1] += aantalSchuiven
+            perKwart[kwartVanBlok(i, BLOKKEN_PER_KWART) - 1] += aantalSchuiven
           }
         }
         kwartenTotaal += 4

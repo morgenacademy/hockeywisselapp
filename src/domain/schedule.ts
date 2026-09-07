@@ -1,4 +1,4 @@
-import { AANTAL_BLOKKEN, isKwartStart } from './clock'
+import { STANDAARD_BLOKKEN_PER_KWART, aantalBlokken, isKwartStart } from './clock'
 import {
   AANTAL_VELDPOSITIES,
   POSITIE_CODES,
@@ -10,6 +10,44 @@ import { inLinie, kanCentraal, magOpPositie, type Speelster } from './players'
 import { VERBODEN, hongaars, isVolledigTeBezetten, maximaleKoppeling } from './assignment'
 
 export type Opstelling = Partial<Record<Positie, string>>
+
+/**
+ * Zet één speelster op één plek en laat de rest van de opstelling met rust.
+ *
+ * Dit is de kern van handmatig ingrijpen. De coach wijst één plek aan; alles
+ * wat hij niet heeft aangewezen moet blijven staan zoals het stond. Dat kan
+ * niet door alleen die ene plek te overschrijven, want dan zou dezelfde
+ * speelster op twee plekken tegelijk staan. Er is precies één andere plek die
+ * mee mag bewegen, en dat is de hare:
+ *
+ *  - stond ze al in het veld, dan ruilen de twee van plek;
+ *  - kwam ze van de bank, dan gaat wie er stond naar de bank.
+ *
+ * De uitkomst is bedoeld om compleet vastgezet te worden, zodat het rooster er
+ * verder niets meer aan verandert.
+ */
+export function opstellingMet(
+  opstelling: Opstelling,
+  positie: Positie,
+  speelsterId: string | null,
+): Opstelling {
+  const nieuw: Opstelling = { ...opstelling }
+  const bewoner = opstelling[positie] ?? null
+
+  if (!speelsterId) {
+    delete nieuw[positie]
+    return nieuw
+  }
+  if (bewoner === speelsterId) return nieuw
+
+  const vandaan = POSITIE_CODES.find((p) => opstelling[p] === speelsterId)
+  nieuw[positie] = speelsterId
+  if (vandaan) {
+    if (bewoner) nieuw[vandaan] = bewoner
+    else delete nieuw[vandaan]
+  }
+  return nieuw
+}
 
 export interface Blok {
   index: number
@@ -37,6 +75,11 @@ export interface RoosterInvoer {
   gespeeldVoor?: Record<string, number>
   /** De blokken vóór `vanafBlok`, die ongewijzigd overgenomen worden. */
   eerdereBlokken?: Blok[]
+  /**
+   * Hoeveel blokken heeft een kwart? Oftewel: hoe vaak wisselt de coach.
+   * Zonder opgave de standaardindeling van drie blokken van 5:50.
+   */
+  blokkenPerKwart?: number
 }
 
 export interface Rooster {
@@ -1155,6 +1198,8 @@ function repareerSamenspel(
  * altijd klopt en de positiekeuze zich daarbinnen aanpast.
  */
 export function maakRooster(invoer: RoosterInvoer): Rooster {
+  const blokkenPerKwart = invoer.blokkenPerKwart ?? STANDAARD_BLOKKEN_PER_KWART
+  const totaalBlokken = aantalBlokken(blokkenPerKwart)
   const vanafBlok = invoer.vanafBlok ?? 0
   const uitgevallen = new Set(invoer.uitgevallen ?? [])
   const veldSpeelsters = invoer.aanwezigen.filter(
@@ -1177,7 +1222,7 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
     const ctx = maakContext(veldSpeelsters, invoer, eerdereBlokken)
     const blokken: Blok[] = [...eerdereBlokken]
     const velden: Speelster[][] = []
-    for (let blok = vanafBlok; blok < AANTAL_BLOKKEN; blok++) {
+    for (let blok = vanafBlok; blok < totaalBlokken; blok++) {
       const vastgezet = invoer.vastgezet?.[blok] ?? {}
       const veld =
         vasteVelden?.[blok - vanafBlok] ?? kiesVeld(blok, veldSpeelsters, vastgezet, ctx)
@@ -1201,7 +1246,7 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
     let kosten = 0
     for (let i = Math.max(1, vanafBlok); i < blokken.length; i++) {
       const aantal = wisselOverzicht(blokken[i - 1], blokken[i]).verplaatst.length
-      kosten += aantal * (isKwartStart(i) ? 1 : 10)
+      kosten += aantal * (isKwartStart(i, blokkenPerKwart) ? 1 : 10)
     }
     return kosten
   }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { bezettingsAdvies, heeftTekort, type GroepAdvies } from '../domain/bezetting'
 import type { Linie } from '../domain/formation'
 import { LINIES, LINIE_NAAM } from '../domain/formation'
@@ -5,6 +6,7 @@ import { centraalLinies, kanCentraal, type Speelster } from '../domain/players'
 import { SELECTIE } from '../domain/players'
 import { controleerBezetting } from '../domain/schedule'
 import { Kop } from '../components/Kop'
+import { isVasteSpeelster } from '../state/matchStore'
 
 /** Linies én centraal-vlaggen zoals ze in de selectie staan, om te zien of er iets is aangepast. */
 const OORSPRONKELIJK = new Map(
@@ -19,6 +21,10 @@ interface Props {
   onCentraal: (id: string, linie: Linie, aan: boolean) => void
   onLinie: (id: string, linie: Linie, aan: boolean) => void
   onHerstelSelectie: () => void
+  /** Zet een invalster in de lijst die niet in de vaste selectie staat. */
+  onVoegToe: (naam: string) => void
+  /** Haalt zo'n toegevoegde speelster weer weg. */
+  onVerwijder: (id: string) => void
   /** Wist de wedstrijd; selectie en centrale posities blijven staan. */
   onNieuweWedstrijd: () => void
   /** Zet werkelijk alles terug, inclusief de centrale posities. */
@@ -116,9 +122,16 @@ function Bezettingstabel({
 
 export function Aanwezigheid({
   selectie, aanwezig, onWissel, onAlle, onCentraal, onLinie, onHerstelSelectie,
-  onNieuweWedstrijd, onWisAlles, onVerder,
+  onVoegToe, onVerwijder, onNieuweWedstrijd, onWisAlles, onVerder,
   onTerugNaarWedstrijd,
 }: Props) {
+  const [nieuweNaam, zetNieuweNaam] = useState('')
+
+  const voegToe = () => {
+    if (!nieuweNaam.trim()) return
+    onVoegToe(nieuweNaam)
+    zetNieuweNaam('')
+  }
   const aanwezigen = selectie.filter((s) => aanwezig.includes(s.id))
   const teWeinig = aanwezigen.length < 11
   const check = controleerBezetting(aanwezigen, null)
@@ -131,8 +144,12 @@ export function Aanwezigheid({
   // na. Dit geeft alvast het beeld over de hele groep.
   const advies = bezettingsAdvies(aanwezigen, null)
   const tekort = heeftTekort(advies)
+  // Alleen de vaste selectie telt: een toegevoegde invalster is geen aanpassing
+  // die je terugzet, en de herstelknop laat haar dan ook staan.
   const gewijzigd = selectie.some(
-    (s) => `${s.linies.join(',')}|${s.centraal.join(',')}` !== OORSPRONKELIJK.get(s.id),
+    (s) =>
+      isVasteSpeelster(s.id) &&
+      `${s.linies.join(',')}|${s.centraal.join(',')}` !== OORSPRONKELIJK.get(s.id),
   )
 
   return (
@@ -155,6 +172,37 @@ export function Aanwezigheid({
         <button className="knop klein" onClick={() => onAlle(false)}>Alles uit</button>
       </div>
 
+      {/* Invalsters zijn geen uitzondering: er is altijd wel een weekend waarin
+          er drie afzeggen en er twee uit een ander team meekomen. Dit kan ook
+          nog als de wedstrijd al loopt -- ze komt dan gewoon met nul gespeelde
+          blokken de rotatie in. */}
+      <section className="toevoegen">
+        <h2>Iemand erbij</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            voegToe()
+          }}
+        >
+          <input
+            type="text"
+            value={nieuweNaam}
+            onChange={(e) => zetNieuweNaam(e.target.value)}
+            placeholder="Naam van de invalster"
+            aria-label="Naam van de invalster"
+            autoComplete="off"
+          />
+          <button className="knop klein" type="submit" disabled={!nieuweNaam.trim()}>
+            Toevoegen
+          </button>
+        </form>
+        <p className="tel">
+          Ze komt aanwezig in de lijst, met alle drie de linies en geen centrale
+          plek. Ken je haar wel, zet dan hieronder haar linies en centraal goed —
+          dan valt ze net zo in het schema als de rest.
+        </p>
+      </section>
+
       <ul className="lijst">
         {selectie.map((speelster) => {
           const aan = aanwezig.includes(speelster.id)
@@ -173,6 +221,7 @@ export function Aanwezigheid({
               >
                 <span className="vink" aria-hidden>{aan ? '✓' : ''}</span>
                 <span className="rij-naam">{speelster.naam}</span>
+                {!isVasteSpeelster(speelster.id) && <span className="rij-info">erbij</span>}
               </button>
 
               <div className="instellingen">
@@ -201,6 +250,16 @@ export function Aanwezigheid({
                     )
                   })}
                 </span>
+
+                {!isVasteSpeelster(speelster.id) && (
+                  <button
+                    className="knop mini gevaar"
+                    onClick={() => onVerwijder(speelster.id)}
+                    title={`${speelster.naam} weer uit de lijst halen`}
+                  >
+                    weghalen
+                  </button>
+                )}
 
                 {centraalKnoppen.length > 0 && (
                   <span className="instel-groep centraal">
