@@ -809,3 +809,16 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   background: var(--paneel-licht);
   border-left: 4px solid var(--accent);
 }
+
+/* Bevestigen in de app zelf, in plaats van met een browservenster. */
+.bevestig {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--paneel-licht);
+  border-left: 4px solid var(--eruit);
+}
+.bevestig p { margin: 0; }

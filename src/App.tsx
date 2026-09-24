@@ -187,15 +187,7 @@ export default function App() {
       onKijkBlok={zetKijkBlok}
       onOverzicht={() => zetToonOverzicht(true)}
       onVoorbereiding={w.naarVoorbereiding}
-      onOpnieuw={() => {
-        if (
-          confirm(
-            'Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan.',
-          )
-        ) {
-          w.herstart()
-        }
-      }}
+      onOpnieuw={w.herstart}
     />
   )
 }

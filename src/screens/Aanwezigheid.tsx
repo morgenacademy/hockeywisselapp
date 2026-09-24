@@ -5,6 +5,7 @@ import { LINIES, LINIE_NAAM } from '../domain/formation'
 import { centraalLinies, kanCentraal, type Speelster } from '../domain/players'
 import { SELECTIE } from '../domain/players'
 import { controleerBezetting } from '../domain/schedule'
+import { Bevestigknop } from '../components/Bevestigknop'
 import { Kop } from '../components/Kop'
 import { isVasteSpeelster } from '../state/matchStore'
 
@@ -325,16 +326,12 @@ export function Aanwezigheid({
       <details className="opnieuw">
         <summary>Opnieuw beginnen</summary>
         <div className="opnieuw-inhoud">
-          <button
-            className="knop klein"
-            onClick={() => {
-              if (confirm('Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan.')) {
-                onNieuweWedstrijd()
-              }
-            }}
-          >
-            Nieuwe wedstrijd
-          </button>
+          <Bevestigknop
+            label="Nieuwe wedstrijd"
+            vraag="Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan."
+            bevestig="Ja, nieuwe wedstrijd"
+            onBevestig={onNieuweWedstrijd}
+          />
           <p className="tel">
             Wist de keeper, de opstelling en de klok. Wie er zijn en wie centraal
             kan, blijft staan.
@@ -342,16 +339,12 @@ export function Aanwezigheid({
 
           {gewijzigd && (
             <>
-              <button
-                className="knop klein"
-                onClick={() => {
-                  if (confirm('Alle aanpassingen aan linies en centrale posities terugzetten naar de oorspronkelijke selectie?')) {
-                    onHerstelSelectie()
-                  }
-                }}
-              >
-                Linies en centraal terugzetten
-              </button>
+              <Bevestigknop
+                label="Linies en centraal terugzetten"
+                vraag="Alle aanpassingen aan linies en centrale posities terugzetten naar de oorspronkelijke selectie?"
+                bevestig="Ja, terugzetten"
+                onBevestig={onHerstelSelectie}
+              />
               <p className="tel">
                 Alleen de selectie terug naar de standaard; de wedstrijd blijft
                 zoals hij is.
@@ -359,16 +352,13 @@ export function Aanwezigheid({
             </>
           )}
 
-          <button
+          <Bevestigknop
             className="knop klein gevaar"
-            onClick={() => {
-              if (confirm('Alles wissen? Ook de centrale posities die je zelf hebt aangezet gaan terug naar de standaard. Dit kun je niet ongedaan maken.')) {
-                onWisAlles()
-              }
-            }}
-          >
-            Alles wissen
-          </button>
+            label="Alles wissen"
+            vraag="Alles wissen? Ook de centrale posities die je zelf hebt aangezet gaan terug naar de standaard. Dit kun je niet ongedaan maken."
+            bevestig="Ja, alles wissen"
+            onBevestig={onWisAlles}
+          />
           <p className="tel">
             Zet de app helemaal terug naar het begin, inclusief de centrale
             posities. Gebruik dit ook als de app zich raar gedraagt.

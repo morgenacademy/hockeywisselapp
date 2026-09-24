@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Bevestigknop } from '../components/Bevestigknop'
 import { Clock } from '../components/Clock'
 import { Field, type BankSpeler, type VeldSpeler } from '../components/Field'
 import { Ruilpaneel } from '../components/Ruilpaneel'
@@ -553,7 +554,13 @@ export function Wedstrijd(props: Props) {
         <button className="knop klein" onClick={props.onVolgendBlok}>Volgend blok</button>
         <button className="knop klein" onClick={props.onOverzicht}>Overzicht</button>
         <button className="knop klein" onClick={props.onVoorbereiding}>Wijzig opstelling</button>
-        <button className="knop klein gevaar" onClick={props.onOpnieuw}>Nieuwe wedstrijd</button>
+        <Bevestigknop
+          className="knop klein gevaar"
+          label="Nieuwe wedstrijd"
+          vraag="Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan."
+          bevestig="Ja, nieuwe wedstrijd"
+          onBevestig={props.onOpnieuw}
+        />
       </div>
 
       {overlayZichtbaar && blok && (
