@@ -730,6 +730,22 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 
 /* Vooruitkijken naar de volgende wissel: tekst links, Klaar rechts. */
-.vooruitkop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.vooruitkop { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
 .vooruitkop p { margin: 0; }
+.vooruitkop > .knop { align-self: flex-end; }
+.bladeren { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bladeren p { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.bladeren p span { font-weight: 500; font-size: 0.85rem; }
+.bladeren .knop { min-width: 44px; min-height: 44px; font-size: 1.4rem; }
+.bladeren .knop:disabled { opacity: 0.35; }
+/* In het overzicht zijn de blokken die nog komen aan te tikken. */
+.blokknop {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: underline dotted;
+}
+.blokknop:focus-visible { outline: 2px solid var(--accent); }
 .vooruitblik > .knop { align-self: flex-start; }

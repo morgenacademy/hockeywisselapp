@@ -256,14 +256,21 @@ SCHUIFT    Lily le Blanc         van Rechtsmid naar Centrale middenveld
 ERIN       Suus Kimenai          op Rechtsmid
 ```
 
-### De volgende wissel aanpassen
+### Vooropstelling: alle wisselmomenten vooruit
 
-Het voorstel is een voorstel. Onder *Volgende wissel* staat **Wissel
-aanpassen**: het veld toont dan de opstelling ná de wissel, en je tikt een plek
-aan om te kiezen wie daar komt — iemand anders van de bank, of juist iemand die
-blijft staan. Wie op dat moment op de bank zou zitten heeft het label *bank*.
-De opstelling die nu speelt verandert niet; met **Klaar** kijk je weer naar nu.
-Na het wisselmoment springt het scherm vanzelf terug.
+Het voorstel is een voorstel. Met **Alle wisselmomenten bekijken** — ook al
+vóór de aftrap — blader je met ‹ › langs elk wisselmoment dat nog komt
+(*Kwart 2, na 8:45*, *Rustwissel, begin kwart 3*). Per moment zie je de
+opstelling ná die wissel en wie eruit en erin gaat. Tik een plek aan om te
+kiezen wie daar komt; wie op dat moment op de bank zou zitten heeft het label
+*bank*. Onder *Volgende wissel* brengt **Wissel aanpassen** je meteen naar het
+eerstvolgende moment, en in het *Overzicht* tik je op een bloknummer.
+
+Wat je zo kiest wordt dat wisselmoment. De blokken ertussen rekent de app
+opnieuw, zodat de speeltijd rond blijft. Wat er nu op het veld staat verandert
+niet; vóór de aftrap zet de app daarom de startopstelling vast zoals je hem
+ziet. Een moment dat geweest is valt vanzelf af, en met **Klaar** kijk je weer
+naar nu.
 
 ### Zelf ingrijpen
 

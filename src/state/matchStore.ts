@@ -460,17 +460,37 @@ export function useWedstrijd() {
     (blok: number, positie: Positie, speelsterId: string | null) => {
       zetStand((huidig) => {
         const huidigeOpstelling = rooster.blokken[blok]?.opstelling ?? huidig.vastgezet[blok] ?? {}
+        // Een wisselmoment verderop in de wedstrijd: dan hoeven de blokken
+        // ertussen niet vast. Die mag het rooster juist opnieuw rekenen, zodat
+        // de speeltijd rond blijft om wat de coach heeft gekozen. Alleen wat
+        // gespeeld is en het blok dat nu loopt liggen vast.
+        const nu = blokIndex(
+          huidig.kwart,
+          blokInKwart(verstrekenSeconden(huidig, Date.now()), huidig.blokkenPerKwart),
+          huidig.blokkenPerKwart,
+        )
+        const vastleggen = blok > nu ? bevriesGespeeld(huidig) : bevries(blok, rooster.blokken)
+        // Vóór de aftrap ligt er nog niets vast, dus zou ook de startopstelling
+        // meeschuiven met een wissel verderop. Die heeft de coach net gezien en
+        // misschien al doorgegeven; die zetten we dus vast zoals hij er staat.
+        const nuOpstelling = rooster.blokken[nu]?.opstelling
+        const startVast =
+          blok > nu && vastleggen.bevrorenTot === undefined && nu >= huidig.bevrorenTot &&
+          !huidig.vastgezet[nu] && nuOpstelling
+            ? { [nu]: nuOpstelling }
+            : {}
         return {
           ...huidig,
-          ...bevries(blok, rooster.blokken),
+          ...vastleggen,
           vastgezet: {
             ...huidig.vastgezet,
+            ...startVast,
             [blok]: opstellingMet(huidigeOpstelling, positie, speelsterId),
           },
         }
       })
     },
-    [bevries, rooster.blokken],
+    [bevries, bevriesGespeeld, rooster.blokken],
   )
 
   /** Geeft dit blok terug aan de app: het voorstel van het rooster geldt weer. */

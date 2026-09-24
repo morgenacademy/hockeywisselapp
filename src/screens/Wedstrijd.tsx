@@ -48,6 +48,13 @@ interface Props {
   onAlarmGezien: (blok: number) => void
   /** Zet een invalster erbij, ook als de wedstrijd al loopt. */
   onVoegToe: (naam: string) => void
+  /**
+   * Welk wisselmoment de coach vooruit bekijkt (blokindex), of `null` voor
+   * het blok dat nu loopt. Staat in App, zodat het Overzicht er ook naartoe
+   * kan springen.
+   */
+  kijkBlok: number | null
+  onKijkBlok: (blok: number | null) => void
   onOverzicht: () => void
   onVoorbereiding: () => void
   onOpnieuw: () => void
@@ -69,16 +76,12 @@ export function Wedstrijd(props: Props) {
   const [gekozenPositie, zetGekozenPositie] = useState<Positie | null>(null)
   const [overlayZichtbaar, zetOverlayZichtbaar] = useState(false)
   const [toonBank, zetToonBank] = useState(true)
-  const [vooruit, zetVooruit] = useState(false)
   const [nieuweNaam, zetNieuweNaam] = useState('')
+  const { kijkBlok, onKijkBlok } = props
 
-  // Vooruitkijken hoort bij één wissel. Is die geweest, dan is het scherm weer
-  // gewoon het blok dat loopt -- anders pas je straks de wissel daarna aan
-  // terwijl je denkt dat het deze is.
-  useEffect(() => {
-    zetVooruit(false)
-    zetGekozenPositie(null)
-  }, [huidigBlok])
+  // Een ander wisselmoment bekijken sluit het ruilpaneel: dat hoorde bij een
+  // plek in een andere opstelling.
+  useEffect(() => zetGekozenPositie(null), [kijkBlok, huidigBlok])
 
   const perId = useMemo(() => new Map(aanwezigen.map((s) => [s.id, s])), [aanwezigen])
   const naam = (id: string) => perId.get(id)?.naam ?? '?'
@@ -93,13 +96,18 @@ export function Wedstrijd(props: Props) {
   // wil bijstellen, bedoelt het kwart dat gaat komen -- dus kijkt het scherm
   // daar dan naartoe: het veld, de bank, het ruilpaneel en wat je vastzet.
   //
-  // Hetzelfde geldt midden in een kwart als de coach de volgende wissel wil
-  // aanpassen ("niet Kiki erin, maar Nora"). Dan kijkt het scherm één blok
-  // vooruit, en tik je op het veld de opstelling ná de wissel aan.
+  // En de coach kan vooruitbladeren langs alle wisselmomenten die nog komen:
+  // per moment de opstelling ná die wissel, en wie eruit en erin gaat. Daar
+  // tik je een plek aan om het voorstel te veranderen ("niet Kiki erin, maar
+  // Nora"). Een moment dat inmiddels geweest is valt vanzelf af.
   const heeftVolgende = rooster.blokken[huidigBlok + 1] !== undefined
   const rust = kwartVoorbij && heeftVolgende
-  const kijktVooruit = !rust && vooruit && heeftVolgende
-  const bewerkBlok = rust || kijktVooruit ? huidigBlok + 1 : huidigBlok
+  const eersteKijk = huidigBlok + 1
+  const laatsteKijk = rooster.blokken.length - 1
+  const kijk =
+    kijkBlok !== null && kijkBlok >= eersteKijk && kijkBlok <= laatsteKijk ? kijkBlok : null
+  const kijktVooruit = kijk !== null
+  const bewerkBlok = kijk ?? (rust ? huidigBlok + 1 : huidigBlok)
 
   const blok = rooster.blokken[bewerkBlok]
   const vorigBlok = bewerkBlok > 0 ? rooster.blokken[bewerkBlok - 1] : null
@@ -238,26 +246,44 @@ export function Wedstrijd(props: Props) {
         </div>
       )}
 
-      {rust && (
+      {rust && !kijktVooruit && (
         <p className="bewerkkop">
           Opstelling voor kwart {kwartVanBlok(bewerkBlok, blokkenPerKwart)} — tik op een plek om te
           wijzigen
         </p>
       )}
 
-      {kijktVooruit && (
+      {kijk !== null && (
         <div className="bewerkkop vooruitkop">
-          <p>
-            Opstelling ná de volgende wissel — tik op een plek en kies wie daar moet komen.
-            Groen omrand komt erin.
+          <div className="bladeren">
+            <button
+              className="knop mini"
+              onClick={() => onKijkBlok(kijk - 1)}
+              disabled={kijk <= eersteKijk}
+              aria-label="Vorig wisselmoment"
+            >
+              ‹
+            </button>
+            <p>
+              <strong>
+                Wisselmoment {kijk - huidigBlok} van {laatsteKijk - huidigBlok}
+              </strong>
+              <span>{momentOmschrijving(kijk, blokkenPerKwart)}</span>
+            </p>
+            <button
+              className="knop mini"
+              onClick={() => onKijkBlok(kijk + 1)}
+              disabled={kijk >= laatsteKijk}
+              aria-label="Volgend wisselmoment"
+            >
+              ›
+            </button>
+          </div>
+          <p className="tel">
+            Opstelling ná deze wissel. Tik op een plek en kies wie daar moet komen; de app
+            rekent de rest van de wedstrijd daaromheen. Groen omrand komt erin.
           </p>
-          <button
-            className="knop klein"
-            onClick={() => {
-              zetVooruit(false)
-              zetGekozenPositie(null)
-            }}
-          >
+          <button className="knop klein" onClick={() => onKijkBlok(null)}>
             Klaar
           </button>
         </div>
@@ -299,7 +325,7 @@ export function Wedstrijd(props: Props) {
 
       {kijktVooruit && (
         <section className="vooruitblik">
-          <h2>Zo gaat de volgende wissel</h2>
+          <h2>Zo gaat deze wissel</h2>
           {ketens.length === 0 ? (
             <p className="tel">Geen wissels: iedereen blijft staan.</p>
           ) : (
@@ -327,16 +353,18 @@ export function Wedstrijd(props: Props) {
           </ul>
           {/* Het voorstel is een voorstel. Wil je iemand anders erin, of moet
               een ander eruit, dan pas je hier de opstelling na de wissel aan. */}
-          <button
-            className="knop klein"
-            onClick={() => {
-              zetVooruit(true)
-              zetGekozenPositie(null)
-            }}
-          >
+          <button className="knop klein" onClick={() => onKijkBlok(bewerkBlok + 1)}>
             Wissel aanpassen
           </button>
         </section>
+      )}
+
+      {/* De vooropstelling: alle wisselmomenten die nog komen, één voor één.
+          Ook vóór de aftrap, zodat je het hele plan kunt doorlopen. */}
+      {!kijktVooruit && rooster.blokken[bewerkBlok + 1] !== undefined && (
+        <button className="knop klein" onClick={() => onKijkBlok(bewerkBlok + 1)}>
+          Alle wisselmomenten bekijken
+        </button>
       )}
 
       <section className="bank">
@@ -453,4 +481,12 @@ export function Wedstrijd(props: Props) {
       )}
     </div>
   )
+}
+
+/** "Kwart 2, na 8:45" of "Rust voor kwart 3": wanneer valt dit wisselmoment? */
+function momentOmschrijving(blok: number, blokkenPerKwart: number): string {
+  const kwart = kwartVanBlok(blok, blokkenPerKwart)
+  if (blok % blokkenPerKwart === 0) return `Rustwissel, begin kwart ${kwart}`
+  const na = (blok % blokkenPerKwart) * blokSeconden(blokkenPerKwart)
+  return `Kwart ${kwart}, na ${formatTijd(na)}`
 }
