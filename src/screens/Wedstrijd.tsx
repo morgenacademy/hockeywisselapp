@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Bevestigknop } from '../components/Bevestigknop'
 import { Clock } from '../components/Clock'
-import { Field, type VeldSpeler } from '../components/Field'
+import { Field, type BankSpeler, type VeldSpeler } from '../components/Field'
 import { Ruilpaneel } from '../components/Ruilpaneel'
 import { SubOverlay, Wisselketen } from '../components/SubOverlay'
 import {
@@ -12,7 +13,7 @@ import {
 } from '../domain/clock'
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
-import { wisselKetens, wisselOverzicht, type Rooster } from '../domain/schedule'
+import { wisselKetens, wisselOverzicht, type Rooster, type WisselKeten } from '../domain/schedule'
 import { OEFENMODUS, SNELHEDEN } from '../oefenmodus'
 import { useAlarm } from '../hooks/useAlarm'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -46,6 +47,15 @@ interface Props {
   /** Welke blokken de coach zelf heeft vastgezet. */
   vastgezet: Record<number, unknown>
   onAlarmGezien: (blok: number) => void
+  /** Zet een invalster erbij, ook als de wedstrijd al loopt. */
+  onVoegToe: (naam: string) => void
+  /**
+   * Welk wisselmoment de coach vooruit bekijkt (blokindex), of `null` voor
+   * het blok dat nu loopt. Staat in App, zodat het Overzicht er ook naartoe
+   * kan springen.
+   */
+  kijkBlok: number | null
+  onKijkBlok: (blok: number | null) => void
   onOverzicht: () => void
   onVoorbereiding: () => void
   onOpnieuw: () => void
@@ -65,8 +75,22 @@ export function Wedstrijd(props: Props) {
   useWakeLock(loopt)
 
   const [gekozenPositie, zetGekozenPositie] = useState<Positie | null>(null)
+  /** Een wisselspeelster die is aangetikt en wacht op een plek in het veld. */
+  const [gekozenBank, zetGekozenBank] = useState<string | null>(null)
   const [overlayZichtbaar, zetOverlayZichtbaar] = useState(false)
   const [toonBank, zetToonBank] = useState(true)
+  const [nieuweNaam, zetNieuweNaam] = useState('')
+  const { kijkBlok, onKijkBlok } = props
+
+  // Een ander wisselmoment bekijken sluit het ruilpaneel: dat hoorde bij een
+  // plek in een andere opstelling. Behalve als je net op een wissel tikte:
+  // dan gaat het paneel meteen open op de plek waar die wissel over ging.
+  const straksKiezen = useRef<Positie | null>(null)
+  useEffect(() => {
+    zetGekozenPositie(straksKiezen.current)
+    zetGekozenBank(null)
+    straksKiezen.current = null
+  }, [kijkBlok, huidigBlok])
 
   const perId = useMemo(() => new Map(aanwezigen.map((s) => [s.id, s])), [aanwezigen])
   const naam = (id: string) => perId.get(id)?.naam ?? '?'
@@ -80,8 +104,19 @@ export function Wedstrijd(props: Props) {
   // ís, en daar valt niets meer aan te veranderen. Wie in de rust de opstelling
   // wil bijstellen, bedoelt het kwart dat gaat komen -- dus kijkt het scherm
   // daar dan naartoe: het veld, de bank, het ruilpaneel en wat je vastzet.
-  const rust = kwartVoorbij && rooster.blokken[huidigBlok + 1] !== undefined
-  const bewerkBlok = rust ? huidigBlok + 1 : huidigBlok
+  //
+  // En de coach kan vooruitbladeren langs alle wisselmomenten die nog komen:
+  // per moment de opstelling ná die wissel, en wie eruit en erin gaat. Daar
+  // tik je een plek aan om het voorstel te veranderen ("niet Kiki erin, maar
+  // Nora"). Een moment dat inmiddels geweest is valt vanzelf af.
+  const heeftVolgende = rooster.blokken[huidigBlok + 1] !== undefined
+  const rust = kwartVoorbij && heeftVolgende
+  const eersteKijk = huidigBlok + 1
+  const laatsteKijk = rooster.blokken.length - 1
+  const kijk =
+    kijkBlok !== null && kijkBlok >= eersteKijk && kijkBlok <= laatsteKijk ? kijkBlok : null
+  const kijktVooruit = kijk !== null
+  const bewerkBlok = kijk ?? (rust ? huidigBlok + 1 : huidigBlok)
 
   const blok = rooster.blokken[bewerkBlok]
   const vorigBlok = bewerkBlok > 0 ? rooster.blokken[bewerkBlok - 1] : null
@@ -124,8 +159,12 @@ export function Wedstrijd(props: Props) {
     const nieuwErin = new Set(
       POSITIE_CODES.filter((p) => vorigBlok && blok.opstelling[p] !== vorigBlok.opstelling[p]),
     )
-    const straksEruit = new Set(komende?.eruit ?? [])
-    const straksSchuiven = new Set((komende?.verplaatst ?? []).map((v) => v.id))
+    // Bij vooruitkijken gaan de markeringen over de wissel die je aanpast, niet
+    // over de wissel daarna: groen is wie er dan in komt.
+    const straksEruit = new Set(kijktVooruit ? [] : komende?.eruit ?? [])
+    const straksSchuiven = new Set(
+      kijktVooruit ? [] : (komende?.verplaatst ?? []).map((v) => v.id),
+    )
     return POSITIE_CODES.flatMap((positie) => {
       const id = blok.opstelling[positie]
       if (!id) return []
@@ -146,9 +185,21 @@ export function Wedstrijd(props: Props) {
         schuiftDoor: straksSchuiven.has(id),
       }]
     })
-  }, [blok, vorigBlok, komende, perId, aanwezigen])
+  }, [blok, vorigBlok, komende, perId, aanwezigen, kijktVooruit])
 
-  const bank = blok?.bank ?? []
+  // Wie niet in het veld staat zit op de bank -- afgeleid uit wie er is, niet
+  // alleen uit het blok. Een invalster die midden in een blok binnenkomt staat
+  // namelijk nog niet in dat (vastgelegde) blok, en zou anders nergens te zien
+  // zijn tot de volgende wissel.
+  const bank = useMemo(() => {
+    if (!blok) return []
+    const opVeld = new Set(Object.values(blok.opstelling))
+    const beschikbaar = aanwezigen
+      .filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))
+      .map((s) => s.id)
+    const inBlok = blok.bank.filter((id) => beschikbaar.includes(id))
+    return [...inBlok, ...beschikbaar.filter((id) => !opVeld.has(id) && !inBlok.includes(id))]
+  }, [blok, aanwezigen, keeperId, uitgevallen])
   const blokWaarschuwingen = blok?.waarschuwingen ?? []
 
   const zetSpeelster = (id: string) => {
@@ -158,6 +209,51 @@ export function Wedstrijd(props: Props) {
   }
 
   const gekozenSpeelster = gekozenPositie ? blok?.opstelling[gekozenPositie] : null
+
+  /**
+   * Ruilen met twee tikken. Bij een blessure heb je geen tijd voor een lijst:
+   * tik de speelster die eraf moet, tik wie erin komt, klaar. Werkt veld-veld
+   * (die twee ruilen van plek), veld-bank en bank-veld (de een gaat eruit, de
+   * ander erin). Het geldt voor het blok dat je voor je hebt; de vaste
+   * wisselmomenten blijven waar ze waren, alleen de blokken daarna rekent de
+   * app opnieuw.
+   */
+  const tikVeld = (positie: Positie) => {
+    const hier = blok?.opstelling[positie] ?? null
+    if (gekozenBank) {
+      onZetOpPositie(bewerkBlok, positie, gekozenBank)
+      zetGekozenBank(null)
+      return
+    }
+    if (gekozenPositie && gekozenPositie !== positie) {
+      if (hier) onZetOpPositie(bewerkBlok, gekozenPositie, hier)
+      else if (gekozenSpeelster) onZetOpPositie(bewerkBlok, positie, gekozenSpeelster)
+      zetGekozenPositie(null)
+      return
+    }
+    zetGekozenPositie(gekozenPositie === positie ? null : positie)
+  }
+
+  const tikBank = (id: string) => {
+    if (gekozenPositie) {
+      onZetOpPositie(bewerkBlok, gekozenPositie, id)
+      zetGekozenPositie(null)
+      return
+    }
+    zetGekozenBank(gekozenBank === id ? null : id)
+  }
+
+  const bankOpVeld: BankSpeler[] = bank.map((id) => ({
+    id,
+    naam: kort(id),
+    straksErin: !kijktVooruit && Boolean(komende?.paren.some((p) => p.erin === id)),
+  }))
+
+  const voegToe = () => {
+    if (!nieuweNaam.trim()) return
+    props.onVoegToe(nieuweNaam)
+    zetNieuweNaam('')
+  }
 
   return (
     <div className="scherm wedstrijd">
@@ -210,25 +306,79 @@ export function Wedstrijd(props: Props) {
         </div>
       )}
 
-      {rust && (
+      {rust && !kijktVooruit && (
         <p className="bewerkkop">
           Opstelling voor kwart {kwartVanBlok(bewerkBlok, blokkenPerKwart)} — tik op een plek om te
           wijzigen
         </p>
       )}
 
+      {kijk !== null && (
+        <div className="bewerkkop vooruitkop">
+          <div className="bladeren">
+            <button
+              className="knop mini"
+              onClick={() => onKijkBlok(kijk - 1)}
+              disabled={kijk <= eersteKijk}
+              aria-label="Vorig wisselmoment"
+            >
+              ‹
+            </button>
+            <p>
+              <strong>
+                Wisselmoment {kijk - huidigBlok} van {laatsteKijk - huidigBlok}
+              </strong>
+              <span>{momentOmschrijving(kijk, blokkenPerKwart)}</span>
+            </p>
+            <button
+              className="knop mini"
+              onClick={() => onKijkBlok(kijk + 1)}
+              disabled={kijk >= laatsteKijk}
+              aria-label="Volgend wisselmoment"
+            >
+              ›
+            </button>
+          </div>
+          <p className="tel">
+            Opstelling ná deze wissel. Tik op een plek en kies wie daar moet komen; de app
+            rekent de rest van de wedstrijd daaromheen. Groen omrand komt erin.
+          </p>
+          <button className="knop klein" onClick={() => onKijkBlok(null)}>
+            Klaar
+          </button>
+        </div>
+      )}
+
       <Field
         spelers={spelers}
         keeperNaam={keeperId ? kort(keeperId) : undefined}
-        onKies={(positie) => zetGekozenPositie(gekozenPositie === positie ? null : positie)}
+        onKies={tikVeld}
         gekozen={gekozenPositie}
+        bank={bankOpVeld}
+        onKiesBank={tikBank}
+        gekozenBank={gekozenBank}
       />
+
+      {gekozenPositie && (
+        <p className="ruilhint" role="status">
+          <strong>{gekozenSpeelster ? naam(gekozenSpeelster) : 'Lege plek'}</strong> gekozen — tik
+          op een andere speelster in het veld of op de bank om direct te ruilen.
+        </p>
+      )}
+      {gekozenBank && (
+        <p className="ruilhint" role="status">
+          <strong>{naam(gekozenBank)}</strong> van de bank gekozen — tik op de speelster in het
+          veld die eruit moet.{' '}
+          <button className="knop mini" onClick={() => zetGekozenBank(null)}>Annuleren</button>
+        </p>
+      )}
 
       {gekozenPositie && (
         <Ruilpaneel
           positie={gekozenPositie}
           huidigeId={gekozenSpeelster ?? null}
           kandidaten={aanwezigen.filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))}
+          bank={bank}
           onKies={zetSpeelster}
           onLeeg={() => {
             onZetOpPositie(bewerkBlok, gekozenPositie, null)
@@ -250,20 +400,59 @@ export function Wedstrijd(props: Props) {
         </p>
       )}
 
-      {komendeKetens.length > 0 && (
-        <section className={`vooruitblik ${komendeIsRust ? 'rust' : ''}`}>
-          <h2>{komendeIsRust ? 'Rustwissel — na dit kwart' : 'Volgende wissel'}</h2>
-          {komendeIsRust && (
-            <p className="tel">
-              De klok staat dan stil. Je kunt dit rustig doen tijdens de pauze.
-            </p>
+      {/* De wissels direct onder de opstelling, in een eigen kleur. Elke wissel
+          is aan te tikken -- dan zie je de opstelling na die wissel en kies je
+          wie er op die plek komt. */}
+      {kijktVooruit && (
+        <section className="wisselpaneel">
+          <h2 className="wisselpaneel-kop">Zo gaat deze wissel</h2>
+          {ketens.length === 0 ? (
+            <p className="tel">Geen wissels: iedereen blijft staan.</p>
+          ) : (
+            <ul className="ketens">
+              {ketens.map((keten) => (
+                <Wisselketen
+                  key={keten.eruit}
+                  keten={keten}
+                  naam={naam}
+                  onKies={() => zetGekozenPositie(plekVanErin(keten))}
+                />
+              ))}
+            </ul>
           )}
+        </section>
+      )}
+
+      {!kijktVooruit && komendeKetens.length > 0 && (
+        <section className={`wisselpaneel ${komendeIsRust ? 'rust' : ''}`}>
+          <h2 className="wisselpaneel-kop">
+            {komendeIsRust ? 'Rustwissel — na dit kwart' : 'Volgende wissel'}
+          </h2>
+          <p className="tel">
+            {komendeIsRust ? 'De klok staat dan stil. ' : ''}Tik op een wissel om hem aan te passen.
+          </p>
           <ul className="ketens">
             {komendeKetens.map((keten) => (
-              <Wisselketen key={keten.eruit} keten={keten} naam={naam} />
+              <Wisselketen
+                key={keten.eruit}
+                keten={keten}
+                naam={naam}
+                onKies={() => {
+                  straksKiezen.current = plekVanErin(keten)
+                  onKijkBlok(bewerkBlok + 1)
+                }}
+              />
             ))}
           </ul>
         </section>
+      )}
+
+      {/* De vooropstelling: alle wisselmomenten die nog komen, één voor één.
+          Ook vóór de aftrap, zodat je het hele plan kunt doorlopen. */}
+      {!kijktVooruit && rooster.blokken[bewerkBlok + 1] !== undefined && (
+        <button className="knop klein" onClick={() => onKijkBlok(bewerkBlok + 1)}>
+          Alle wisselmomenten bekijken
+        </button>
       )}
 
       <section className="bank">
@@ -275,7 +464,8 @@ export function Wedstrijd(props: Props) {
           <ul className="chips">
             {bank.map((id) => {
               const speelster = perId.get(id)
-              const paar = komende?.paren.find((p) => p.erin === id)
+              // Bij vooruitkijken zou dit over de wissel daarna gaan; weglaten.
+              const paar = kijktVooruit ? undefined : komende?.paren.find((p) => p.erin === id)
               return (
                 <li key={id}>
                   <span className={`chip bankchip ${paar ? 'volgende' : ''}`}>
@@ -293,6 +483,45 @@ export function Wedstrijd(props: Props) {
             {bank.length === 0 && <li className="tel">Iedereen speelt.</li>}
           </ul>
         )}
+      </section>
+
+      {/* Ook tijdens de wedstrijd: er komt een invalster aanlopen, of je ziet
+          pas bij de warming-up dat er eentje mee is. Wat al gespeeld is blijft
+          staan; zij begint met nul minuten en komt dus snel aan de beurt. */}
+      <section className="toevoegen">
+        <h2>Invalster erbij</h2>
+        {/* Geen <form>: in een afgeschermd venster (een voorbeeldweergave, een
+            app die de pagina insluit) blokkeert de browser formulieren, en dan
+            deed Toevoegen stilletjes niets. Een knop en Enter werken overal. */}
+        <div className="toevoegen-rij">
+          <input
+            type="text"
+            value={nieuweNaam}
+            onChange={(e) => zetNieuweNaam(e.target.value)}
+            placeholder="Naam van de invalster"
+            aria-label="Naam van de invalster"
+            autoComplete="off"
+            enterKeyHint="done"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                voegToe()
+              }
+            }}
+          />
+          <button
+            className="knop klein"
+            type="button"
+            onClick={voegToe}
+            disabled={!nieuweNaam.trim()}
+          >
+            Toevoegen
+          </button>
+        </div>
+        <p className="tel">
+          Ze kan in elke linie staan en gaat op de bank; de app zet haar bij de volgende
+          wissel erin. Wil je haar meteen in het veld, tik dan op een plek op het veld.
+        </p>
       </section>
 
       <section className="speeltijd">
@@ -335,7 +564,13 @@ export function Wedstrijd(props: Props) {
         <button className="knop klein" onClick={props.onVolgendBlok}>Volgend blok</button>
         <button className="knop klein" onClick={props.onOverzicht}>Overzicht</button>
         <button className="knop klein" onClick={props.onVoorbereiding}>Wijzig opstelling</button>
-        <button className="knop klein gevaar" onClick={props.onOpnieuw}>Nieuwe wedstrijd</button>
+        <Bevestigknop
+          className="knop klein gevaar"
+          label="Nieuwe wedstrijd"
+          vraag="Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan."
+          bevestig="Ja, nieuwe wedstrijd"
+          onBevestig={props.onOpnieuw}
+        />
       </div>
 
       {overlayZichtbaar && blok && (
@@ -350,4 +585,17 @@ export function Wedstrijd(props: Props) {
       )}
     </div>
   )
+}
+
+/** "Kwart 2, na 8:45" of "Rust voor kwart 3": wanneer valt dit wisselmoment? */
+function momentOmschrijving(blok: number, blokkenPerKwart: number): string {
+  const kwart = kwartVanBlok(blok, blokkenPerKwart)
+  if (blok % blokkenPerKwart === 0) return `Rustwissel, begin kwart ${kwart}`
+  const na = (blok % blokkenPerKwart) * blokSeconden(blokkenPerKwart)
+  return `Kwart ${kwart}, na ${formatTijd(na)}`
+}
+
+/** De plek waar de speelster van de bank terechtkomt: daar kies je iemand anders. */
+function plekVanErin(keten: WisselKeten): Positie {
+  return keten.stappen[keten.stappen.length - 1]?.naar ?? keten.vanPositie
 }

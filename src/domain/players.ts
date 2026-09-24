@@ -34,6 +34,18 @@ export const SELECTIE: Speelster[] = [
   { id: 'p14', naam: 'Romy Vincenten',     linies: ['M', 'A'],      centraal: [] },
   { id: 'p15', naam: 'Lynn Visschers',     linies: ['V', 'M', 'A'], centraal: ['V', 'M'] },
   { id: 'p16', naam: 'Eva van der Zee',    linies: ['V', 'A'],      centraal: [] },
+  { id: 'p17', naam: 'Livia de Jong',      linies: ['V', 'M', 'A'], centraal: [] },
+]
+
+/**
+ * Speelsters die de coach liever niet tegelijk in het veld heeft.
+ *
+ * Geen harde regel: de speeltijd gaat altijd voor, en wie allebei meer dan de
+ * helft van de wedstrijd spelen staan onvermijdelijk een paar blokken samen.
+ * Het rooster haalt dat aantal zo ver omlaag als het kan.
+ */
+export const UIT_ELKAAR: [string, string][] = [
+  ['p02', 'p12'], // Kiki van der Feer en Priscilla Twigt
 ]
 
 /** Roepnaam voor op het veld: voornaam, met achternaam-initiaal als die dubbel is. */

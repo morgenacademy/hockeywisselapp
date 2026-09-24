@@ -13,6 +13,8 @@ export default function App() {
   const w = useWedstrijd()
   const { stand, wijzig, aanwezigen } = w
   const [toonOverzicht, zetToonOverzicht] = useState(false)
+  // Welk wisselmoment de coach vooruit bekijkt; zie `Wedstrijd`.
+  const [kijkBlok, zetKijkBlok] = useState<number | null>(null)
 
   // Vult de sterkte-volgordes zodra de keeper bekend is, en houdt ze schoon als
   // de aanwezigheid verandert.
@@ -148,6 +150,10 @@ export default function App() {
         huidigBlok={w.huidigBlok}
         blokkenPerKwart={stand.blokkenPerKwart}
         onTerug={() => zetToonOverzicht(false)}
+        onKiesBlok={(blok) => {
+          zetKijkBlok(blok)
+          zetToonOverzicht(false)
+        }}
       />
     )
   }
@@ -176,17 +182,12 @@ export default function App() {
       onAlarmGezien={w.markeerAlarm}
       snelheid={stand.snelheid ?? 1}
       onSnelheid={w.zetSnelheid}
+      onVoegToe={w.voegSpeelsterToe}
+      kijkBlok={kijkBlok}
+      onKijkBlok={zetKijkBlok}
       onOverzicht={() => zetToonOverzicht(true)}
       onVoorbereiding={w.naarVoorbereiding}
-      onOpnieuw={() => {
-        if (
-          confirm(
-            'Nieuwe wedstrijd beginnen? De keeper, de opstelling en de klok gaan weg. Je selectie en de centrale posities blijven staan.',
-          )
-        ) {
-          w.herstart()
-        }
-      }}
+      onOpnieuw={w.herstart}
     />
   )
 }

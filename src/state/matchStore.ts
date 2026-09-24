@@ -11,7 +11,7 @@ import {
   verstrekenMet,
 } from '../domain/clock'
 import { LINIES, type Linie, type Positie } from '../domain/formation'
-import { SELECTIE, magOpPositie, type Speelster } from '../domain/players'
+import { SELECTIE, UIT_ELKAAR, magOpPositie, type Speelster } from '../domain/players'
 import { maakRooster, opstellingMet, type Blok, type Opstelling, type Rooster } from '../domain/schedule'
 import { OEFENMODUS, STANDAARD_OEFENSNELHEID } from '../oefenmodus'
 
@@ -148,7 +148,36 @@ export function selectieIsGeldig(selectie: unknown): boolean {
   )
 }
 
+/**
+ * Zet speelsters die later aan de vaste selectie zijn toegevoegd erbij.
+ *
+ * De opgeslagen selectie wint van `SELECTIE`, want daarin staan de linies en
+ * centraal-vlaggen die de coach heeft bijgesteld. Maar komt er een nieuwe
+ * speelster in het team, dan zou zij zo nooit verschijnen bij wie de app al
+ * eens gebruikt heeft. Wie ontbreekt komt er dus achteraan bij, en is ook
+ * aanwezig -- tenzij er al een wedstrijd loopt: daar zet je haar zelf aan.
+ */
+export function metNieuweVaste(stand: WedstrijdStand): WedstrijdStand {
+  const bekend = new Set(stand.selectie.map((s) => s.id))
+  const nieuw = SELECTIE.filter((s) => !bekend.has(s.id))
+  if (nieuw.length === 0) return stand
+  const gestart = stand.kwart > 1 || stand.secondenInKwart > 0
+  // Invalsters blijven achteraan, na de vaste selectie.
+  const vast = stand.selectie.filter((s) => isVasteSpeelster(s.id))
+  const extra = stand.selectie.filter((s) => !isVasteSpeelster(s.id))
+  return {
+    ...stand,
+    selectie: [...vast, ...nieuw, ...extra],
+    aanwezig: gestart ? stand.aanwezig : [...stand.aanwezig, ...nieuw.map((s) => s.id)],
+  }
+}
+
 function lees(): WedstrijdStand {
+  const stand = leesOpslag()
+  return metNieuweVaste(stand)
+}
+
+function leesOpslag(): WedstrijdStand {
   try {
     const ruw = localStorage.getItem(OPSLAG_SLEUTEL)
     if (!ruw) return standaardStand()
@@ -299,6 +328,7 @@ export function useWedstrijd() {
       gespeeldVoor: stand.bevrorenTot > 0 ? stand.gespeeldVoor : undefined,
       eerdereBlokken: stand.bevrorenBlokken,
       blokkenPerKwart: stand.blokkenPerKwart,
+      uitElkaar: UIT_ELKAAR,
     })
   }, [
     aanwezigen,
@@ -336,6 +366,37 @@ export function useWedstrijd() {
       return { bevrorenBlokken: blokken.slice(0, totBlok), bevrorenTot: totBlok, gespeeldVoor: gespeeld }
     },
     [],
+  )
+
+  /**
+   * Legt vast wat er tot nu toe gespeeld is, als de wedstrijd al loopt.
+   *
+   * Nodig voor alles wat de aanwezigheid verandert terwijl er al gespeeld is:
+   * komt er een invalster bij of gaat er iemand naar huis, dan rekent het
+   * rooster opnieuw -- en zonder dit ook de blokken die al achter de rug zijn.
+   * Dan zou de speeltijd ineens iets anders zeggen dan wat er op het veld
+   * gebeurd is.
+   *
+   * Het blok dat nu loopt gaat mee. Een invalster heeft nul minuten en zou het
+   * rooster haar dus meteen het veld in sturen -- midden in een blok, met een
+   * andere speelster die zonder belletje of wisselkaart zou moeten vertrekken.
+   * Zo komt ze erin bij de volgende wissel, zoals iedereen. Wil de coach haar
+   * meteen erin, dan tikt hij haar op het veld.
+   */
+  const bevriesGespeeld = useCallback(
+    (huidig: WedstrijdStand): Partial<WedstrijdStand> => {
+      const verstreken = verstrekenSeconden(huidig, Date.now())
+      if (huidig.kwart === 1 && verstreken === 0) return {}
+      const nu = blokIndex(
+        huidig.kwart,
+        blokInKwart(verstreken, huidig.blokkenPerKwart),
+        huidig.blokkenPerKwart,
+      )
+      const tot = Math.min(aantalBlokken(huidig.blokkenPerKwart), nu + 1)
+      if (tot <= huidig.bevrorenTot) return {}
+      return bevries(tot, rooster.blokken)
+    },
+    [bevries, rooster.blokken],
   )
 
   const start = useCallback(() => {
@@ -429,17 +490,37 @@ export function useWedstrijd() {
     (blok: number, positie: Positie, speelsterId: string | null) => {
       zetStand((huidig) => {
         const huidigeOpstelling = rooster.blokken[blok]?.opstelling ?? huidig.vastgezet[blok] ?? {}
+        // Een wisselmoment verderop in de wedstrijd: dan hoeven de blokken
+        // ertussen niet vast. Die mag het rooster juist opnieuw rekenen, zodat
+        // de speeltijd rond blijft om wat de coach heeft gekozen. Alleen wat
+        // gespeeld is en het blok dat nu loopt liggen vast.
+        const nu = blokIndex(
+          huidig.kwart,
+          blokInKwart(verstrekenSeconden(huidig, Date.now()), huidig.blokkenPerKwart),
+          huidig.blokkenPerKwart,
+        )
+        const vastleggen = blok > nu ? bevriesGespeeld(huidig) : bevries(blok, rooster.blokken)
+        // Vóór de aftrap ligt er nog niets vast, dus zou ook de startopstelling
+        // meeschuiven met een wissel verderop. Die heeft de coach net gezien en
+        // misschien al doorgegeven; die zetten we dus vast zoals hij er staat.
+        const nuOpstelling = rooster.blokken[nu]?.opstelling
+        const startVast =
+          blok > nu && vastleggen.bevrorenTot === undefined && nu >= huidig.bevrorenTot &&
+          !huidig.vastgezet[nu] && nuOpstelling
+            ? { [nu]: nuOpstelling }
+            : {}
         return {
           ...huidig,
-          ...bevries(blok, rooster.blokken),
+          ...vastleggen,
           vastgezet: {
             ...huidig.vastgezet,
+            ...startVast,
             [blok]: opstellingMet(huidigeOpstelling, positie, speelsterId),
           },
         }
       })
     },
-    [bevries, rooster.blokken],
+    [bevries, bevriesGespeeld, rooster.blokken],
   )
 
   /** Geeft dit blok terug aan de app: het voorstel van het rooster geldt weer. */
@@ -504,11 +585,12 @@ export function useWedstrijd() {
       }
       return {
         ...huidig,
+        ...bevriesGespeeld(huidig),
         selectie: [...huidig.selectie, speelster],
         aanwezig: [...huidig.aanwezig, speelster.id],
       }
     })
-  }, [])
+  }, [bevriesGespeeld])
 
   /** Haalt een zelf toegevoegde speelster weer weg; de vaste selectie blijft. */
   const verwijderSpeelster = useCallback((id: string) => {
@@ -614,12 +696,15 @@ export function useWedstrijd() {
   const naarVoorbereiding = useCallback(() => {
     zetStand((huidig) => ({
       ...huidig,
+      // Op de voorbereidingsschermen kan de aanwezigheid nog veranderen; wat al
+      // gespeeld is mag daar niet door omvallen.
+      ...bevriesGespeeld(huidig),
       fase: 'aanwezigheid',
       loopt: false,
       secondenInKwart: verstrekenSeconden(huidig, Date.now()),
       gestartOp: null,
     }))
-  }, [])
+  }, [bevriesGespeeld])
 
   /**
    * Wist de wedstrijd, maar niet de selectie.

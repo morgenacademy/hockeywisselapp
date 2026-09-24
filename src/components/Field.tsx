@@ -24,12 +24,27 @@ export interface VeldSpeler {
   schuiftDoor?: boolean
 }
 
+/** Een wisselspeelster, bovenin het veld getekend. */
+export interface BankSpeler {
+  id: string
+  naam: string
+  /** Komt bij de volgende wissel erin; krijgt een groene rand. */
+  straksErin?: boolean
+}
+
 interface Props {
   spelers: VeldSpeler[]
   keeperNaam?: string
   onKies?: (positie: Positie) => void
   gekozen?: Positie | null
+  /** De bank, als rij bolletjes boven de aanval: dan zie je in één blik wie er klaarzit. */
+  bank?: BankSpeler[]
+  onKiesBank?: (id: string) => void
+  gekozenBank?: string | null
 }
+
+/** Hoogte van de bankrij: in de vrije strook tussen achterlijn en aanval. */
+const BANK_Y = 6.2
 
 /** Cirkel (D) rond het doel: kwartcirkels vanaf de doelpalen plus een recht stuk. */
 function cirkelPad(onder: boolean): string {
@@ -90,8 +105,15 @@ function plek(positie: PositieInfo): { x: number; y: number } {
   return { x: positie.x * BREEDTE, y: LENGTE * (0.8 - positie.y * 0.7) }
 }
 
-export function Field({ spelers, keeperNaam, onKies, gekozen }: Props) {
+export function Field({
+  spelers, keeperNaam, onKies, gekozen, bank = [], onKiesBank, gekozenBank,
+}: Props) {
   const perPositie = new Map(spelers.map((s) => [s.positie, s]))
+  // Zes wisselspeelsters passen op volle grootte naast elkaar; zijn het er
+  // meer, dan worden de bolletjes kleiner in plaats van over elkaar te vallen.
+  const bankRuimte = BREEDTE / Math.max(bank.length, 1)
+  const bankStraal = Math.min(4.2, bankRuimte / 2 - 0.4)
+  const bankSchaal = bankStraal / 4.6
 
   return (
     <svg
@@ -141,6 +163,16 @@ export function Field({ spelers, keeperNaam, onKies, gekozen }: Props) {
             className={klassen}
             transform={`translate(${x} ${y})`}
             onClick={onKies ? () => onKies(positie.code) : undefined}
+            onKeyDown={
+              onKies
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onKies(positie.code)
+                    }
+                  }
+                : undefined
+            }
             role={onKies ? 'button' : undefined}
             tabIndex={onKies ? 0 : undefined}
             aria-label={`${positie.naam}: ${speler?.naam ?? 'leeg'}`}
@@ -155,6 +187,48 @@ export function Field({ spelers, keeperNaam, onKies, gekozen }: Props) {
 
       {/* Vlaggen als laatste, zodat ze nooit onder het positielabel van de rij
           erboven verdwijnen. */}
+      {bank.length > 0 && (
+        <text className="veld-banklabel" x={BREEDTE / 2} y={BANK_Y + 6.4}>
+          BANK
+        </text>
+      )}
+      {bank.map((speler, index) => {
+        const x = bankRuimte * (index + 0.5)
+        const klassen = [
+          'veld-speler',
+          'bankspeler',
+          speler.straksErin ? 'straks-erin' : '',
+          gekozenBank === speler.id ? 'gekozen' : '',
+          onKiesBank ? 'klikbaar' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')
+        return (
+          <g
+            key={speler.id}
+            className={klassen}
+            transform={`translate(${x} ${BANK_Y}) scale(${bankSchaal})`}
+            onClick={onKiesBank ? () => onKiesBank(speler.id) : undefined}
+            onKeyDown={
+              onKiesBank
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onKiesBank(speler.id)
+                    }
+                  }
+                : undefined
+            }
+            role={onKiesBank ? 'button' : undefined}
+            tabIndex={onKiesBank ? 0 : undefined}
+            aria-label={`Bank: ${speler.naam}`}
+          >
+            <circle r={4.6} />
+            <Naam tekst={speler.naam} />
+          </g>
+        )
+      })}
+
       {POSITIES.map((positie) => {
         const speler = perPositie.get(positie.code)
         if (!speler?.gaatEruit && !speler?.schuiftDoor) return null

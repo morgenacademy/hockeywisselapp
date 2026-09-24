@@ -29,6 +29,13 @@ export function Clock({
     <div className={`klok ${bijna ? 'bijna' : ''} ${loopt ? 'loopt' : 'stil'}`}>
       <div className="klok-kop">
         <span className="kwart">Kwart {kwart}</span>
+        {/* Loopt hij of niet? Aan een tikkende seconde zie je dat pas na een
+            tel, en langs de lijn kijk je maar even. Daarom zegt de klok het
+            zelf, met een knipperend groen bolletje als hij loopt. */}
+        <span className={`klokstatus ${loopt ? 'loopt' : ''}`} role="status">
+          <span className="klokstatus-bol" aria-hidden />
+          {loopt ? 'Klok loopt' : kwartVoorbij ? 'Kwart voorbij' : 'Klok staat stil'}
+        </span>
         <span className="blokje">Blok {blok} van {blokkenPerKwart}</span>
       </div>
 

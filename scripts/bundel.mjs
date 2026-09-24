@@ -35,9 +35,16 @@ const body = html
 // niet meenemen. Mocht er iets in de body naar een los bestand wijzen, dan valt
 // dat hier weg.
 
+// Tekenset en viewport moeten er wél in. Zonder charset raadt de browser bij
+// een los geopend bestand, en wordt "—" of "›" rommel als "â€”". Zonder
+// viewport toont een telefoon de pagina als uitgezoomd desktopscherm.
+const viewport =
+  html.match(/<meta name="viewport"[^>]*>/)?.[0] ??
+  '<meta name="viewport" content="width=device-width, initial-scale=1" />'
+
 writeFileSync(
   uitvoer,
-  `<title>${titel}</title>\n<style>\n${css}\n</style>\n${body}\n<script type="module">\n${js}\n</script>\n`,
+  `<!doctype html>\n<html lang="nl">\n<meta charset="UTF-8" />\n${viewport}\n<title>${titel}</title>\n<style>\n${css}\n</style>\n${body}\n<script type="module">\n${js}\n</script>\n`,
 )
 
 const grootte = (readFileSync(uitvoer).length / 1024).toFixed(0)

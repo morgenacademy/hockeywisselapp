@@ -39,8 +39,9 @@ describe('advies voor de echte selectie', () => {
   it('rekent de keeper alvast af als die nog niet gekozen is', () => {
     // Zestien aanwezig betekent vijftien veldspeelsters, ook al weet je nog niet
     // wie er keept. Anders staat het advies op het aanwezigheidsscherm te hoog.
-    const zonderKeeper = bezettingsAdvies(SELECTIE, null)
-    const metKeeper = bezettingsAdvies(SELECTIE, 'p16')
+    const zestien = SELECTIE.slice(0, 16)
+    const zonderKeeper = bezettingsAdvies(zestien, null)
+    const metKeeper = bezettingsAdvies(zestien, 'p16')
     const verdediging = (lijst: typeof zonderKeeper) => lijst.find((g) => g.naam === 'Verdediging')!
     expect(verdediging(zonderKeeper).advies).toBe(verdediging(metKeeper).advies)
     expect(verdediging(zonderKeeper).advies).toBe(6)

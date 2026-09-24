@@ -188,6 +188,17 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .klok-tijd strong { font-size: 2.4rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .klok.bijna .aftellen strong { color: var(--accent); }
 .klok .verstreken strong { font-size: 1.6rem; color: var(--tekst-zacht); }
+.klok.loopt { border-color: var(--erin); }
+.klok.loopt.bijna { border-color: var(--accent); }
+.klok.loopt .verstreken strong { color: var(--tekst); }
+.klokstatus { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.klokstatus.loopt { color: var(--erin); }
+.klokstatus-bol { width: 10px; height: 10px; border-radius: 50%; background: var(--tekst-zacht); }
+.klokstatus.loopt .klokstatus-bol { background: var(--erin); animation: klok-knipper 1s steps(2, start) infinite; }
+@keyframes klok-knipper { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .klokstatus.loopt .klokstatus-bol { animation: none; }
+}
 
 /* --- veld --- */
 .veld { width: 100%; height: auto; display: block; border-radius: var(--radius); }
@@ -224,6 +235,16 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   stroke: var(--eruit);
   stroke-width: 0.7;
   opacity: 0.9;
+}
+.veld-speler.bankspeler circle { fill: #33475f; stroke: rgba(255, 255, 255, 0.45); stroke-dasharray: 1.2 0.8; }
+.veld-speler.bankspeler.straks-erin circle { stroke: var(--erin); stroke-width: 0.9; stroke-dasharray: none; }
+.veld-speler.bankspeler.gekozen circle { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: none; }
+.veld-banklabel {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 1.9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-anchor: middle;
 }
 .veld-speler.gaat-eruit circle:not(.halo) { stroke: var(--eruit); stroke-width: 0.9; }
 .veld-vlag text {
@@ -672,7 +693,7 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 
 /* --- iemand erbij zetten --- */
 .toevoegen { display: flex; flex-direction: column; gap: 8px; }
-.toevoegen form { display: flex; gap: 8px; flex-wrap: wrap; }
+.toevoegen-rij { display: flex; gap: 8px; flex-wrap: wrap; }
 .toevoegen input {
   flex: 1 1 12ch;
   min-width: 0;
@@ -717,3 +738,87 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Vooruitkijken naar de volgende wissel: tekst links, Klaar rechts. */
+.vooruitkop { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.vooruitkop p { margin: 0; }
+.vooruitkop > .knop { align-self: flex-end; }
+.bladeren { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bladeren p { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.bladeren p span { font-weight: 500; font-size: 0.85rem; }
+.bladeren .knop { min-width: 44px; min-height: 44px; font-size: 1.4rem; }
+.bladeren .knop:disabled { opacity: 0.35; }
+/* In het overzicht zijn de blokken die nog komen aan te tikken. */
+.blokknop {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: underline dotted;
+}
+.blokknop:focus-visible { outline: 2px solid var(--accent); }
+.vooruitblik > .knop { align-self: flex-start; }
+
+/* --- wisselpaneel ---
+   Bovenaan het wedstrijdscherm, met een vol geel kopvlak zoals de wisselkaart:
+   tussen de marineblauwe vlakken is dit het ene ding dat eruit springt. Bij een
+   rustwissel is het vlak groen. */
+.wisselpaneel {
+  background: var(--paneel);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.wisselpaneel-kop {
+  margin: 0 -12px;
+  padding: 10px 12px;
+  background: var(--accent);
+  color: var(--op-accent);
+  font-size: 1.05rem;
+}
+.wisselpaneel.rust { border-color: var(--erin); }
+.wisselpaneel.rust .wisselpaneel-kop { background: var(--erin); color: #052e16; }
+.wisselpaneel .tel { margin: 0; }
+
+.keten.klikbaar { cursor: pointer; position: relative; padding-right: 76px; }
+.keten.klikbaar:hover, .keten.klikbaar:focus-visible { background: var(--rand); outline: none; }
+.keten.klikbaar:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.keten-wijzig {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--accent);
+  color: var(--op-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 9px;
+  border-radius: 999px;
+}
+
+/* Na één tik op het veld: wat er gekozen is, en wat de volgende tik doet. */
+.ruilhint {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--paneel-licht);
+  border-left: 4px solid var(--accent);
+}
+
+/* Bevestigen in de app zelf, in plaats van met een browservenster. */
+.bevestig {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--paneel-licht);
+  border-left: 4px solid var(--eruit);
+}
+.bevestig p { margin: 0; }

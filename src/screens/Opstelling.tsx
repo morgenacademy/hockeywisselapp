@@ -33,6 +33,7 @@ export function Opstelling({
   aanwezigen, keeperId, voorstel, vastgezet, onZet, onWis, onTerug, onVerder,
 }: Props) {
   const [gekozen, zetGekozen] = useState<Positie | null>(null)
+  const [gekozenBank, zetGekozenBank] = useState<string | null>(null)
   const perId = new Map(aanwezigen.map((s) => [s.id, s]))
   const veld = aanwezigen.filter((s) => s.id !== keeperId)
   const kort = (id: string) => {
@@ -63,6 +64,30 @@ export function Opstelling({
   const opVeld = new Set(POSITIE_CODES.map((p) => voorstel[p]).filter(Boolean) as string[])
   const bank = veld.filter((s) => !opVeld.has(s.id))
 
+  // Ruilen met twee tikken, net als op het wedstrijdscherm.
+  const tikVeld = (positie: Positie) => {
+    const hier = voorstel[positie] ?? null
+    const daar = gekozen ? voorstel[gekozen] ?? null : null
+    if (gekozenBank) {
+      onZet(positie, gekozenBank)
+      zetGekozenBank(null)
+    } else if (gekozen && gekozen !== positie) {
+      if (hier) onZet(gekozen, hier)
+      else if (daar) onZet(positie, daar)
+      zetGekozen(null)
+    } else {
+      zetGekozen(gekozen === positie ? null : positie)
+    }
+  }
+  const tikBank = (id: string) => {
+    if (gekozen) {
+      onZet(gekozen, id)
+      zetGekozen(null)
+    } else {
+      zetGekozenBank(gekozenBank === id ? null : id)
+    }
+  }
+
   return (
     <div className="scherm">
       <Kop />
@@ -83,9 +108,20 @@ export function Opstelling({
       <Field
         spelers={spelers}
         keeperNaam={keeperId ? kort(keeperId) : undefined}
-        onKies={(positie) => zetGekozen(gekozen === positie ? null : positie)}
+        onKies={tikVeld}
         gekozen={gekozen}
+        bank={bank.map((s) => ({ id: s.id, naam: kort(s.id) }))}
+        onKiesBank={tikBank}
+        gekozenBank={gekozenBank}
       />
+
+      {(gekozen || gekozenBank) && (
+        <p className="ruilhint" role="status">
+          {gekozen
+            ? 'Tik op een andere speelster in het veld of op de bank om direct te ruilen.'
+            : 'Tik op de speelster in het veld die op de bank moet beginnen.'}
+        </p>
+      )}
 
       {gekozen && (
         <Ruilpaneel

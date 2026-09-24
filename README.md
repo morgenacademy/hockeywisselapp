@@ -209,6 +209,20 @@ samen spelen laten simpelweg geen ruimte meer over — bij volle bezetting komt
 iedereen uit de pool op precies zes centrale blokken uit. De volgorde bepaalt nog
 wel wie er centraal ínvalt als er een plek vrijkomt.
 
+### Uit elkaar
+
+Het omgekeerde kan ook: speelsters die de coach liever níét tegelijk in het veld
+heeft. Die paren staan in `UIT_ELKAAR` in `players.ts`; nu zijn dat Kiki en
+Priscilla, die allebei middenveld en aanval spelen.
+
+Een reparatiestap ruilt rustbeurten tot ze zo weinig mogelijk samen spelen, en
+dat is het rekenkundige minimum: wie elk n van de N blokken speelt, staat
+onvermijdelijk `n_a + n_b − N` blokken samen. Met de volle selectie spelen ze
+elk 8 van de 12 blokken, dus minstens 4 samen -- minder kan alleen door een van
+beiden minder te laten spelen, en speeltijd gaat voor. Over 48 bezettingen en
+keeperkeuzes gaat dat van 249 naar 215 blokken samen, precies het minimum in
+elk geval. De prijs: Nora en Kiki spelen iets minder vaak samen (267 → 253).
+
 ## Gebruiken
 
 Op je telefoon: open de app, en voeg hem toe aan je beginscherm. Daarna werkt hij
@@ -216,7 +230,9 @@ ook zonder bereik langs het veld.
 
 1. **Aanwezigheid** — vink aan wie er is, en zet zo nodig bij iemand **centraal**
    aan. Staat er een invalster naast je die niet in de selectie zit, dan zet je
-   haar er met **Iemand erbij** zo bij; dat kan ook nog als de wedstrijd loopt.
+   haar er met **Iemand erbij** zo bij. Tijdens de wedstrijd kan het ook, met
+   **Invalster erbij** onder de bank: wat al gespeeld is blijft staan, het blok
+   dat loopt ook, en zij komt bij de volgende wissel erin.
 2. **Keeper** — zij speelt de hele wedstrijd. De app waarschuwt als je keuze de
    centrale posities onvulbaar maakt.
 3. **Wisselmomenten** — hoe vaak wissel je per kwart? De app adviseert op basis
@@ -226,7 +242,8 @@ ook zonder bereik langs het veld.
 5. **Startopstelling** — het voorstel van de app, waarin je zelf plekken kunt
    aanpassen. Wat je vastzet geldt voor het eerste blok; de rest van de wedstrijd
    rekent daaromheen.
-6. **Wedstrijd** — Start/Pauze, het veld met de opstelling, en een vooruitblik op
+6. **Wedstrijd** — Start/Pauze (met *Klok loopt* en een knipperend groen
+   bolletje zolang de tijd telt), het veld met de opstelling, en een vooruitblik op
    de volgende wissel. Speelsters die eraf moeten krijgen een rode rand met
    ERUIT; wie doorschuift krijgt SCHUIFT.
 
@@ -253,11 +270,40 @@ SCHUIFT    Lily le Blanc         van Rechtsmid naar Centrale middenveld
 ERIN       Suus Kimenai          op Rechtsmid
 ```
 
+### Vooropstelling: alle wisselmomenten vooruit
+
+Het voorstel is een voorstel. Met **Alle wisselmomenten bekijken** — ook al
+vóór de aftrap — blader je met ‹ › langs elk wisselmoment dat nog komt
+(*Kwart 2, na 8:45*, *Rustwissel, begin kwart 3*). Per moment zie je de
+opstelling ná die wissel en wie eruit en erin gaat. Tik een plek aan om te
+kiezen wie daar komt; wie op dat moment op de bank zou zitten heeft het label
+*bank*. Onder *Volgende wissel* brengt **Wissel aanpassen** je meteen naar het
+eerstvolgende moment, en in het *Overzicht* tik je op een bloknummer.
+
+Wat je zo kiest wordt dat wisselmoment. De blokken ertussen rekent de app
+opnieuw, zodat de speeltijd rond blijft. Wat er nu op het veld staat verandert
+niet; vóór de aftrap zet de app daarom de startopstelling vast zoals je hem
+ziet. Een moment dat geweest is valt vanzelf af, en met **Klaar** kijk je weer
+naar nu.
+
 ### Zelf ingrijpen
 
 Tijdens de wedstrijd kun je altijd ingrijpen: tik op een speelster op het veld om
 haar te vervangen, of zet iemand op **eruit** bij een blessure of kaart. De app
 rekent de rest van de wedstrijd opnieuw uit; wat al gespeeld is blijft staan.
+
+**Snel ruilen met twee tikken.** De bank staat als rij bolletjes bovenin het
+veld, boven de aanval; wie bij de volgende wissel erin komt heeft een groene rand.
+Tik een speelster aan en daarna een tweede, en ze ruilen direct: twee in het veld
+ruilen van plek, een van de bank gaat erin en de ander naar de bank. Bij een
+blessure is dat genoeg. Het geldt voor het blok dat loopt; de vaste wisselmomenten
+blijven op dezelfde tijd, alleen de blokken daarna rekent de app opnieuw. Tik je
+één speelster in het veld aan, dan staat de keuzelijst er ook onder, voor wie
+liever uit de hele selectie kiest. De startopstelling werkt op dezelfde manier.
+
+**De wissels staan bovenaan.** De komende wissel staat boven het veld, in een
+kader met een geel kopvlak. Tik op een wissel (**Wijzig ›**) en de plek waar zij
+erin komt gaat meteen open, zodat je iemand anders kunt kiezen.
 
 Twee dingen die daarbij vastliggen:
 
