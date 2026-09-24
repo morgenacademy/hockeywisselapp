@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Clock } from '../components/Clock'
-import { Field, type VeldSpeler } from '../components/Field'
+import { Field, type BankSpeler, type VeldSpeler } from '../components/Field'
 import { Ruilpaneel } from '../components/Ruilpaneel'
 import { SubOverlay, Wisselketen } from '../components/SubOverlay'
 import {
@@ -74,6 +74,8 @@ export function Wedstrijd(props: Props) {
   useWakeLock(loopt)
 
   const [gekozenPositie, zetGekozenPositie] = useState<Positie | null>(null)
+  /** Een wisselspeelster die is aangetikt en wacht op een plek in het veld. */
+  const [gekozenBank, zetGekozenBank] = useState<string | null>(null)
   const [overlayZichtbaar, zetOverlayZichtbaar] = useState(false)
   const [toonBank, zetToonBank] = useState(true)
   const [nieuweNaam, zetNieuweNaam] = useState('')
@@ -85,6 +87,7 @@ export function Wedstrijd(props: Props) {
   const straksKiezen = useRef<Positie | null>(null)
   useEffect(() => {
     zetGekozenPositie(straksKiezen.current)
+    zetGekozenBank(null)
     straksKiezen.current = null
   }, [kijkBlok, huidigBlok])
 
@@ -205,6 +208,45 @@ export function Wedstrijd(props: Props) {
   }
 
   const gekozenSpeelster = gekozenPositie ? blok?.opstelling[gekozenPositie] : null
+
+  /**
+   * Ruilen met twee tikken. Bij een blessure heb je geen tijd voor een lijst:
+   * tik de speelster die eraf moet, tik wie erin komt, klaar. Werkt veld-veld
+   * (die twee ruilen van plek), veld-bank en bank-veld (de een gaat eruit, de
+   * ander erin). Het geldt voor het blok dat je voor je hebt; de vaste
+   * wisselmomenten blijven waar ze waren, alleen de blokken daarna rekent de
+   * app opnieuw.
+   */
+  const tikVeld = (positie: Positie) => {
+    const hier = blok?.opstelling[positie] ?? null
+    if (gekozenBank) {
+      onZetOpPositie(bewerkBlok, positie, gekozenBank)
+      zetGekozenBank(null)
+      return
+    }
+    if (gekozenPositie && gekozenPositie !== positie) {
+      if (hier) onZetOpPositie(bewerkBlok, gekozenPositie, hier)
+      else if (gekozenSpeelster) onZetOpPositie(bewerkBlok, positie, gekozenSpeelster)
+      zetGekozenPositie(null)
+      return
+    }
+    zetGekozenPositie(gekozenPositie === positie ? null : positie)
+  }
+
+  const tikBank = (id: string) => {
+    if (gekozenPositie) {
+      onZetOpPositie(bewerkBlok, gekozenPositie, id)
+      zetGekozenPositie(null)
+      return
+    }
+    zetGekozenBank(gekozenBank === id ? null : id)
+  }
+
+  const bankOpVeld: BankSpeler[] = bank.map((id) => ({
+    id,
+    naam: kort(id),
+    straksErin: !kijktVooruit && Boolean(komende?.paren.some((p) => p.erin === id)),
+  }))
 
   const voegToe = () => {
     if (!nieuweNaam.trim()) return
@@ -364,9 +406,26 @@ export function Wedstrijd(props: Props) {
       <Field
         spelers={spelers}
         keeperNaam={keeperId ? kort(keeperId) : undefined}
-        onKies={(positie) => zetGekozenPositie(gekozenPositie === positie ? null : positie)}
+        onKies={tikVeld}
         gekozen={gekozenPositie}
+        bank={bankOpVeld}
+        onKiesBank={tikBank}
+        gekozenBank={gekozenBank}
       />
+
+      {gekozenPositie && (
+        <p className="ruilhint" role="status">
+          <strong>{gekozenSpeelster ? naam(gekozenSpeelster) : 'Lege plek'}</strong> gekozen — tik
+          op een andere speelster in het veld of op de bank om direct te ruilen.
+        </p>
+      )}
+      {gekozenBank && (
+        <p className="ruilhint" role="status">
+          <strong>{naam(gekozenBank)}</strong> van de bank gekozen — tik op de speelster in het
+          veld die eruit moet.{' '}
+          <button className="knop mini" onClick={() => zetGekozenBank(null)}>Annuleren</button>
+        </p>
+      )}
 
       {gekozenPositie && (
         <Ruilpaneel

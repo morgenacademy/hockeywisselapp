@@ -236,6 +236,16 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   stroke-width: 0.7;
   opacity: 0.9;
 }
+.veld-speler.bankspeler circle { fill: #33475f; stroke: rgba(255, 255, 255, 0.45); stroke-dasharray: 1.2 0.8; }
+.veld-speler.bankspeler.straks-erin circle { stroke: var(--erin); stroke-width: 0.9; stroke-dasharray: none; }
+.veld-speler.bankspeler.gekozen circle { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: none; }
+.veld-banklabel {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 1.9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-anchor: middle;
+}
 .veld-speler.gaat-eruit circle:not(.halo) { stroke: var(--eruit); stroke-width: 0.9; }
 .veld-vlag text {
   text-anchor: middle;
@@ -789,4 +799,13 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   font-weight: 800;
   padding: 5px 9px;
   border-radius: 999px;
+}
+
+/* Na één tik op het veld: wat er gekozen is, en wat de volgende tik doet. */
+.ruilhint {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--paneel-licht);
+  border-left: 4px solid var(--accent);
 }

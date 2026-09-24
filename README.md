@@ -292,6 +292,19 @@ Tijdens de wedstrijd kun je altijd ingrijpen: tik op een speelster op het veld o
 haar te vervangen, of zet iemand op **eruit** bij een blessure of kaart. De app
 rekent de rest van de wedstrijd opnieuw uit; wat al gespeeld is blijft staan.
 
+**Snel ruilen met twee tikken.** De bank staat als rij bolletjes bovenin het
+veld, boven de aanval; wie bij de volgende wissel erin komt heeft een groene rand.
+Tik een speelster aan en daarna een tweede, en ze ruilen direct: twee in het veld
+ruilen van plek, een van de bank gaat erin en de ander naar de bank. Bij een
+blessure is dat genoeg. Het geldt voor het blok dat loopt; de vaste wisselmomenten
+blijven op dezelfde tijd, alleen de blokken daarna rekent de app opnieuw. Tik je
+één speelster in het veld aan, dan staat de keuzelijst er ook onder, voor wie
+liever uit de hele selectie kiest. De startopstelling werkt op dezelfde manier.
+
+**De wissels staan bovenaan.** De komende wissel staat boven het veld, in een
+kader met een geel kopvlak. Tik op een wissel (**Wijzig ›**) en de plek waar zij
+erin komt gaat meteen open, zodat je iemand anders kunt kiezen.
+
 Twee dingen die daarbij vastliggen:
 
 **Iedereen is te kiezen.** Ook wie een sleutelpositie normaal niet aankan, en ook
