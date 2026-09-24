@@ -349,9 +349,60 @@ export function Wedstrijd(props: Props) {
         </div>
       )}
 
-      {/* De wissels staan bovenaan, in een eigen kleur: dat is waar je tijdens
-          een kwart naar kijkt. Elke wissel is aan te tikken -- dan zie je de
-          opstelling na die wissel en kies je wie er op die plek komt. */}
+      <Field
+        spelers={spelers}
+        keeperNaam={keeperId ? kort(keeperId) : undefined}
+        onKies={tikVeld}
+        gekozen={gekozenPositie}
+        bank={bankOpVeld}
+        onKiesBank={tikBank}
+        gekozenBank={gekozenBank}
+      />
+
+      {gekozenPositie && (
+        <p className="ruilhint" role="status">
+          <strong>{gekozenSpeelster ? naam(gekozenSpeelster) : 'Lege plek'}</strong> gekozen — tik
+          op een andere speelster in het veld of op de bank om direct te ruilen.
+        </p>
+      )}
+      {gekozenBank && (
+        <p className="ruilhint" role="status">
+          <strong>{naam(gekozenBank)}</strong> van de bank gekozen — tik op de speelster in het
+          veld die eruit moet.{' '}
+          <button className="knop mini" onClick={() => zetGekozenBank(null)}>Annuleren</button>
+        </p>
+      )}
+
+      {gekozenPositie && (
+        <Ruilpaneel
+          positie={gekozenPositie}
+          huidigeId={gekozenSpeelster ?? null}
+          kandidaten={aanwezigen.filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))}
+          bank={bank}
+          onKies={zetSpeelster}
+          onLeeg={() => {
+            onZetOpPositie(bewerkBlok, gekozenPositie, null)
+            zetGekozenPositie(null)
+          }}
+          onAnnuleer={() => zetGekozenPositie(null)}
+        />
+      )}
+
+      {/* Zelf ingrijpen legt dit blok vast: de app rekent er wel omheen voor de
+          blokken die nog komen, maar verandert er zelf niets meer aan. Deze knop
+          is de weg terug. */}
+      {Boolean(vastgezet[bewerkBlok]) && (
+        <p className="melding vastgezet">
+          Deze opstelling heb je zelf gezet; de app laat hem staan.{' '}
+          <button className="knop mini" onClick={() => props.onLaatAppBepalen(bewerkBlok)}>
+            Laat de app dit blok bepalen
+          </button>
+        </p>
+      )}
+
+      {/* De wissels direct onder de opstelling, in een eigen kleur. Elke wissel
+          is aan te tikken -- dan zie je de opstelling na die wissel en kies je
+          wie er op die plek komt. */}
       {kijktVooruit && (
         <section className="wisselpaneel">
           <h2 className="wisselpaneel-kop">Zo gaat deze wissel</h2>
@@ -404,57 +455,6 @@ export function Wedstrijd(props: Props) {
         </button>
       )}
 
-      <Field
-        spelers={spelers}
-        keeperNaam={keeperId ? kort(keeperId) : undefined}
-        onKies={tikVeld}
-        gekozen={gekozenPositie}
-        bank={bankOpVeld}
-        onKiesBank={tikBank}
-        gekozenBank={gekozenBank}
-      />
-
-      {gekozenPositie && (
-        <p className="ruilhint" role="status">
-          <strong>{gekozenSpeelster ? naam(gekozenSpeelster) : 'Lege plek'}</strong> gekozen — tik
-          op een andere speelster in het veld of op de bank om direct te ruilen.
-        </p>
-      )}
-      {gekozenBank && (
-        <p className="ruilhint" role="status">
-          <strong>{naam(gekozenBank)}</strong> van de bank gekozen — tik op de speelster in het
-          veld die eruit moet.{' '}
-          <button className="knop mini" onClick={() => zetGekozenBank(null)}>Annuleren</button>
-        </p>
-      )}
-
-      {gekozenPositie && (
-        <Ruilpaneel
-          positie={gekozenPositie}
-          huidigeId={gekozenSpeelster ?? null}
-          kandidaten={aanwezigen.filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))}
-          bank={bank}
-          onKies={zetSpeelster}
-          onLeeg={() => {
-            onZetOpPositie(bewerkBlok, gekozenPositie, null)
-            zetGekozenPositie(null)
-          }}
-          onAnnuleer={() => zetGekozenPositie(null)}
-        />
-      )}
-
-      {/* Zelf ingrijpen legt dit blok vast: de app rekent er wel omheen voor de
-          blokken die nog komen, maar verandert er zelf niets meer aan. Deze knop
-          is de weg terug. */}
-      {Boolean(vastgezet[bewerkBlok]) && (
-        <p className="melding vastgezet">
-          Deze opstelling heb je zelf gezet; de app laat hem staan.{' '}
-          <button className="knop mini" onClick={() => props.onLaatAppBepalen(bewerkBlok)}>
-            Laat de app dit blok bepalen
-          </button>
-        </p>
-      )}
-
       <section className="bank">
         <button className="bank-kop" onClick={() => zetToonBank((t) => !t)} aria-expanded={toonBank}>
           <h2>Bank ({bank.length})</h2>
@@ -490,12 +490,10 @@ export function Wedstrijd(props: Props) {
           staan; zij begint met nul minuten en komt dus snel aan de beurt. */}
       <section className="toevoegen">
         <h2>Invalster erbij</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            voegToe()
-          }}
-        >
+        {/* Geen <form>: in een afgeschermd venster (een voorbeeldweergave, een
+            app die de pagina insluit) blokkeert de browser formulieren, en dan
+            deed Toevoegen stilletjes niets. Een knop en Enter werken overal. */}
+        <div className="toevoegen-rij">
           <input
             type="text"
             value={nieuweNaam}
@@ -503,11 +501,23 @@ export function Wedstrijd(props: Props) {
             placeholder="Naam van de invalster"
             aria-label="Naam van de invalster"
             autoComplete="off"
+            enterKeyHint="done"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                voegToe()
+              }
+            }}
           />
-          <button className="knop klein" type="submit" disabled={!nieuweNaam.trim()}>
+          <button
+            className="knop klein"
+            type="button"
+            onClick={voegToe}
+            disabled={!nieuweNaam.trim()}
+          >
             Toevoegen
           </button>
-        </form>
+        </div>
         <p className="tel">
           Ze kan in elke linie staan en gaat op de bank; de app zet haar bij de volgende
           wissel erin. Wil je haar meteen in het veld, tik dan op een plek op het veld.

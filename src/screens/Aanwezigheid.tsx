@@ -179,12 +179,10 @@ export function Aanwezigheid({
           blokken de rotatie in. */}
       <section className="toevoegen">
         <h2>Iemand erbij</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            voegToe()
-          }}
-        >
+        {/* Geen <form>: in een afgeschermd venster (een voorbeeldweergave, een
+            app die de pagina insluit) blokkeert de browser formulieren, en dan
+            deed Toevoegen stilletjes niets. Een knop en Enter werken overal. */}
+        <div className="toevoegen-rij">
           <input
             type="text"
             value={nieuweNaam}
@@ -192,11 +190,23 @@ export function Aanwezigheid({
             placeholder="Naam van de invalster"
             aria-label="Naam van de invalster"
             autoComplete="off"
+            enterKeyHint="done"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                voegToe()
+              }
+            }}
           />
-          <button className="knop klein" type="submit" disabled={!nieuweNaam.trim()}>
+          <button
+            className="knop klein"
+            type="button"
+            onClick={voegToe}
+            disabled={!nieuweNaam.trim()}
+          >
             Toevoegen
           </button>
-        </form>
+        </div>
         <p className="tel">
           Ze komt aanwezig in de lijst, met alle drie de linies en geen centrale
           plek. Ken je haar wel, zet dan hieronder haar linies en centraal goed —

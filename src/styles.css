@@ -693,7 +693,7 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 
 /* --- iemand erbij zetten --- */
 .toevoegen { display: flex; flex-direction: column; gap: 8px; }
-.toevoegen form { display: flex; gap: 8px; flex-wrap: wrap; }
+.toevoegen-rij { display: flex; gap: 8px; flex-wrap: wrap; }
 .toevoegen input {
   flex: 1 1 12ch;
   min-width: 0;
