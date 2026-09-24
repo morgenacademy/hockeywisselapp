@@ -37,6 +37,17 @@ export const SELECTIE: Speelster[] = [
   { id: 'p17', naam: 'Livia de Jong',      linies: ['V', 'M', 'A'], centraal: [] },
 ]
 
+/**
+ * Speelsters die de coach liever niet tegelijk in het veld heeft.
+ *
+ * Geen harde regel: de speeltijd gaat altijd voor, en wie allebei meer dan de
+ * helft van de wedstrijd spelen staan onvermijdelijk een paar blokken samen.
+ * Het rooster haalt dat aantal zo ver omlaag als het kan.
+ */
+export const UIT_ELKAAR: [string, string][] = [
+  ['p02', 'p12'], // Kiki van der Feer en Priscilla Twigt
+]
+
 /** Roepnaam voor op het veld: voornaam, met achternaam-initiaal als die dubbel is. */
 export function korteNaam(speelster: Speelster, allen: Speelster[]): string {
   const voornaam = speelster.naam.split(' ')[0]

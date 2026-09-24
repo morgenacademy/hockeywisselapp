@@ -80,6 +80,12 @@ export interface RoosterInvoer {
    * Zonder opgave de standaardindeling van drie blokken van 5:50.
    */
   blokkenPerKwart?: number
+  /**
+   * Paren (ids) die de coach liever niet tegelijk in het veld heeft. De app
+   * haalt hun gezamenlijke blokken omlaag zover dat kan zonder aan de
+   * speeltijd te komen. Zie `repareerUitElkaar`.
+   */
+  uitElkaar?: [string, string][]
 }
 
 export interface Rooster {
@@ -1094,25 +1100,26 @@ function dubbeleRustTelling(velden: Speelster[][], veldSpeelsters: Speelster[]):
   return aantal
 }
 
-function repareerSamenspel(
+/**
+ * Zoekt ruilen die een score verhogen: A gaat er in blok i in en in blok j uit,
+ * B precies andersom. Ieders speeltijd blijft daarbij exact gelijk. Gedeeld
+ * door `repareerSamenspel` (paren sámen) en `repareerUitElkaar` (paren juist
+ * niet), die alleen verschillen in wat ze tellen.
+ */
+function ruilVoorScore(
   velden: Speelster[][],
   veldSpeelsters: Speelster[],
   vastVoor: VastVoor,
+  maxRuilen: number,
+  scoreVan: (velden: Speelster[][]) => number,
+  magNiet: (velden: Speelster[][]) => boolean = () => false,
 ): Speelster[][] | null {
   const huidig = velden.map((veld) => [...veld])
-
-  const paren = concurrerendeParen(veldSpeelsters)
-  if (paren.length === 0) return null
-
-  // Bewust de som en niet "hoeveel paren staan op hun minimum": dat laatste
-  // stopt zodra een paar er nét boven zit, en dan speelt Nora nog steeds maar
-  // vijf van de twaalf blokken met Kiki samen.
-  const samenTotaal = () => samenspelTotaal(huidig, paren)
-
+  const samenTotaal = () => scoreVan(huidig)
   let aangepast = false
   let score = samenTotaal()
 
-  for (let ronde = 0; ronde < MAX_SAMENSPEL_RUILEN; ronde++) {
+  for (let ronde = 0; ronde < maxRuilen; ronde++) {
     let beste: {
       i: number
       j: number
@@ -1163,8 +1170,10 @@ function repareerSamenspel(
               continue
             }
             const na = samenTotaal()
+            const verboden = magNiet(huidig)
             huidig[i] = oudI
             huidig[j] = oudJ
+            if (verboden) continue
 
             if (na <= score) continue
             // Twee speelsters uit dezelfde linie ruilen kost het minst: de
@@ -1190,6 +1199,69 @@ function repareerSamenspel(
   }
 
   return aangepast ? huidig : null
+}
+
+
+function repareerSamenspel(
+  velden: Speelster[][],
+  veldSpeelsters: Speelster[],
+  vastVoor: VastVoor,
+): Speelster[][] | null {
+  const paren = concurrerendeParen(veldSpeelsters)
+  if (paren.length === 0) return null
+
+  // Bewust de som en niet "hoeveel paren staan op hun minimum": dat laatste
+  // stopt zodra een paar er nét boven zit, en dan speelt Nora nog steeds maar
+  // vijf van de twaalf blokken met Kiki samen.
+  return ruilVoorScore(velden, veldSpeelsters, vastVoor, MAX_SAMENSPEL_RUILEN, (v) =>
+    samenspelTotaal(v, paren),
+  )
+}
+
+/**
+ * Houdt paren die de coach liever niet samen heeft zo veel mogelijk uit elkaar.
+ *
+ * Het omgekeerde van `repareerSamenspel`: Kiki en Priscilla spelen allebei
+ * middenveld en aanval, en de coach wil ze liever niet tegelijk in het veld.
+ * Ruilen tot hun gezamenlijke blokken niet verder omlaag kunnen -- met als
+ * ondergrens het rekenkundige minimum, want wie allebei meer dan de helft
+ * spelen staan onvermijdelijk een paar blokken samen.
+ *
+ * Ook hier blijft ieders speeltijd exact gelijk, en mag het niet ten koste gaan
+ * van wat de samenspel-reparatie heeft rechtgezet: een ruil die een
+ * concurrerend paar terugduwt naar zijn minimum wordt niet genomen.
+ */
+const MAX_UIT_ELKAAR_RUILEN = 8
+
+/** Hoeveel blokken staan de paren die uit elkaar moeten samen in het veld? */
+export function uitElkaarTelling(velden: Speelster[][], paren: [string, string][]): number {
+  let aantal = 0
+  for (const veld of velden) {
+    const ids = new Set(veld.map((s) => s.id))
+    for (const [a, b] of paren) if (ids.has(a) && ids.has(b)) aantal++
+  }
+  return aantal
+}
+
+function repareerUitElkaar(
+  velden: Speelster[][],
+  veldSpeelsters: Speelster[],
+  vastVoor: VastVoor,
+  paren: [string, string][],
+): Speelster[][] | null {
+  const aanwezig = new Set(veldSpeelsters.map((s) => s.id))
+  const geldig = paren.filter(([a, b]) => a !== b && aanwezig.has(a) && aanwezig.has(b))
+  if (geldig.length === 0) return null
+  const samenspel = concurrerendeParen(veldSpeelsters)
+  const minimumGrens = parenOpMinimum(velden, samenspel)
+  return ruilVoorScore(
+    velden,
+    veldSpeelsters,
+    vastVoor,
+    MAX_UIT_ELKAAR_RUILEN,
+    (v) => -uitElkaarTelling(v, geldig),
+    (v) => parenOpMinimum(v, samenspel) > minimumGrens,
+  )
 }
 
 /**
@@ -1280,7 +1352,10 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
   if (naLinies) velden = naLinies
   const naSamenspel = repareerSamenspel(velden, veldSpeelsters, vastVoor)
   if (naSamenspel) velden = naSamenspel
-  if (naSpeeltijd || naLinies || naSamenspel) uitkomst = bouw(velden)
+  const uitElkaar = invoer.uitElkaar ?? []
+  const naUitElkaar = repareerUitElkaar(velden, veldSpeelsters, vastVoor, uitElkaar)
+  if (naUitElkaar) velden = naUitElkaar
+  if (naSpeeltijd || naLinies || naSamenspel || naUitElkaar) uitkomst = bouw(velden)
 
   // De schuiven die hierna nog over zijn, zijn onvermijdelijk: het zijn er niet
   // te veel, ze staan alleen op het verkeerde moment. Deze stap verhuist ze naar
@@ -1314,6 +1389,7 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
     const grens = meldingen(uitkomst.blokken)
     const rustGrens = dubbeleRustTelling(velden, veldSpeelsters)
     const minimumGrens = parenOpMinimum(velden, paren)
+    const uitElkaarGrens = uitElkaarTelling(velden, uitElkaar)
     let beter: typeof uitkomst | null = null
 
     for (let i = 0; i < velden.length && !beter; i++) {
@@ -1334,6 +1410,7 @@ export function maakRooster(invoer: RoosterInvoer): Rooster {
             if (!isBlokTeBezetten(kandidaat[j], false, invoer.vastgezet?.[j + vanafBlok])) continue
             if (dubbeleRustTelling(kandidaat, veldSpeelsters) > rustGrens) continue
             if (parenOpMinimum(kandidaat, paren) > minimumGrens) continue
+            if (uitElkaarTelling(kandidaat, uitElkaar) > uitElkaarGrens) continue
             const proef = bouw(kandidaat)
             if (schuifKosten(proef.blokken) >= kosten) continue
             if (meldingen(proef.blokken) > grens) continue

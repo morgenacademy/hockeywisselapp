@@ -983,3 +983,33 @@ describe('determinisme', () => {
     expect(rooster(14).blokken).toEqual(rooster(14).blokken)
   })
 })
+
+describe('uit elkaar: speelsters die de coach liever niet samen heeft', () => {
+  const samen = (r: Rooster, a: string, b: string) =>
+    r.blokken.filter((blok) => bezetteIds(blok).includes(a) && bezetteIds(blok).includes(b)).length
+
+  it('haalt Kiki en Priscilla omlaag tot het rekenkundige minimum', () => {
+    for (const aanwezig of [13, 15, 16]) {
+      for (const blokkenPerKwart of [2, 3]) {
+        const basis = rooster(aanwezig, { blokkenPerKwart })
+        const r = rooster(aanwezig, { blokkenPerKwart, uitElkaar: [['p02', 'p12']] })
+        const minimum = Math.max(0, r.gespeeld.p02 + r.gespeeld.p12 - r.blokken.length)
+        const label = `${aanwezig} aanwezig, ${blokkenPerKwart} per kwart`
+        expect(samen(r, 'p02', 'p12'), label).toBe(minimum)
+        expect(samen(r, 'p02', 'p12'), label).toBeLessThanOrEqual(samen(basis, 'p02', 'p12'))
+      }
+    }
+  })
+
+  it('laat de speeltijd daarbij gelijk verdeeld', () => {
+    const r = rooster(16, { uitElkaar: [['p02', 'p12']] })
+    const gespeeld = Object.values(r.gespeeld)
+    expect(Math.max(...gespeeld) - Math.min(...gespeeld)).toBeLessThanOrEqual(1)
+  })
+
+  it('negeert een paar waarvan er een niet is', () => {
+    const zonder = rooster(11)
+    const met = rooster(11, { uitElkaar: [['p02', 'p99']] })
+    expect(met.blokken.map(bezetteIds)).toEqual(zonder.blokken.map(bezetteIds))
+  })
+})

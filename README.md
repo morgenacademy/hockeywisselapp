@@ -209,6 +209,20 @@ samen spelen laten simpelweg geen ruimte meer over — bij volle bezetting komt
 iedereen uit de pool op precies zes centrale blokken uit. De volgorde bepaalt nog
 wel wie er centraal ínvalt als er een plek vrijkomt.
 
+### Uit elkaar
+
+Het omgekeerde kan ook: speelsters die de coach liever níét tegelijk in het veld
+heeft. Die paren staan in `UIT_ELKAAR` in `players.ts`; nu zijn dat Kiki en
+Priscilla, die allebei middenveld en aanval spelen.
+
+Een reparatiestap ruilt rustbeurten tot ze zo weinig mogelijk samen spelen, en
+dat is het rekenkundige minimum: wie elk n van de N blokken speelt, staat
+onvermijdelijk `n_a + n_b − N` blokken samen. Met de volle selectie spelen ze
+elk 8 van de 12 blokken, dus minstens 4 samen -- minder kan alleen door een van
+beiden minder te laten spelen, en speeltijd gaat voor. Over 48 bezettingen en
+keeperkeuzes gaat dat van 249 naar 215 blokken samen, precies het minimum in
+elk geval. De prijs: Nora en Kiki spelen iets minder vaak samen (267 → 253).
+
 ## Gebruiken
 
 Op je telefoon: open de app, en voeg hem toe aan je beginscherm. Daarna werkt hij

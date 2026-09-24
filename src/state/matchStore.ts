@@ -11,7 +11,7 @@ import {
   verstrekenMet,
 } from '../domain/clock'
 import { LINIES, type Linie, type Positie } from '../domain/formation'
-import { SELECTIE, magOpPositie, type Speelster } from '../domain/players'
+import { SELECTIE, UIT_ELKAAR, magOpPositie, type Speelster } from '../domain/players'
 import { maakRooster, opstellingMet, type Blok, type Opstelling, type Rooster } from '../domain/schedule'
 import { OEFENMODUS, STANDAARD_OEFENSNELHEID } from '../oefenmodus'
 
@@ -328,6 +328,7 @@ export function useWedstrijd() {
       gespeeldVoor: stand.bevrorenTot > 0 ? stand.gespeeldVoor : undefined,
       eerdereBlokken: stand.bevrorenBlokken,
       blokkenPerKwart: stand.blokkenPerKwart,
+      uitElkaar: UIT_ELKAAR,
     })
   }, [
     aanwezigen,
