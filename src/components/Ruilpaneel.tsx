@@ -7,6 +7,8 @@ interface Props {
   huidigeId: string | null
   /** Waaruit je kunt kiezen: alle beschikbare veldspeelsters. */
   kandidaten: Speelster[]
+  /** Wie er in dit blok op de bank zit; die krijgen een label, want dat zijn de wissels. */
+  bank?: string[]
   onKies: (id: string) => void
   onLeeg?: () => void
   onAnnuleer: () => void
@@ -27,7 +29,9 @@ interface Props {
  * speelt staat vooraan, daarna wie het buiten haar linie kan, en pas onderaan
  * wie er echt niet vandaan komt.
  */
-export function Ruilpaneel({ positie, huidigeId, kandidaten, onKies, onLeeg, onAnnuleer }: Props) {
+export function Ruilpaneel({
+  positie, huidigeId, kandidaten, bank = [], onKies, onLeeg, onAnnuleer,
+}: Props) {
   const info = positieInfo(positie)
   const naamVan = (id: string) => kandidaten.find((s) => s.id === id)?.naam ?? '?'
 
@@ -66,6 +70,7 @@ export function Ruilpaneel({ positie, huidigeId, kandidaten, onKies, onLeeg, onA
                 }
               >
                 {speelster.naam}
+                {bank.includes(speelster.id) && <em>bank</em>}
                 {soort === 1 && <em>buiten linie</em>}
                 {soort === 2 && <em>niet centraal</em>}
               </button>

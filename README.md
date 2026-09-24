@@ -216,7 +216,9 @@ ook zonder bereik langs het veld.
 
 1. **Aanwezigheid** — vink aan wie er is, en zet zo nodig bij iemand **centraal**
    aan. Staat er een invalster naast je die niet in de selectie zit, dan zet je
-   haar er met **Iemand erbij** zo bij; dat kan ook nog als de wedstrijd loopt.
+   haar er met **Iemand erbij** zo bij. Tijdens de wedstrijd kan het ook, met
+   **Invalster erbij** onder de bank: wat al gespeeld is blijft staan, het blok
+   dat loopt ook, en zij komt bij de volgende wissel erin.
 2. **Keeper** — zij speelt de hele wedstrijd. De app waarschuwt als je keuze de
    centrale posities onvulbaar maakt.
 3. **Wisselmomenten** — hoe vaak wissel je per kwart? De app adviseert op basis
@@ -226,7 +228,8 @@ ook zonder bereik langs het veld.
 5. **Startopstelling** — het voorstel van de app, waarin je zelf plekken kunt
    aanpassen. Wat je vastzet geldt voor het eerste blok; de rest van de wedstrijd
    rekent daaromheen.
-6. **Wedstrijd** — Start/Pauze, het veld met de opstelling, en een vooruitblik op
+6. **Wedstrijd** — Start/Pauze (met *Klok loopt* en een knipperend groen
+   bolletje zolang de tijd telt), het veld met de opstelling, en een vooruitblik op
    de volgende wissel. Speelsters die eraf moeten krijgen een rode rand met
    ERUIT; wie doorschuift krijgt SCHUIFT.
 
@@ -252,6 +255,15 @@ SCHUIFT    Lily le Blanc         van Rechtsmid naar Centrale middenveld
    ↓
 ERIN       Suus Kimenai          op Rechtsmid
 ```
+
+### De volgende wissel aanpassen
+
+Het voorstel is een voorstel. Onder *Volgende wissel* staat **Wissel
+aanpassen**: het veld toont dan de opstelling ná de wissel, en je tikt een plek
+aan om te kiezen wie daar komt — iemand anders van de bank, of juist iemand die
+blijft staan. Wie op dat moment op de bank zou zitten heeft het label *bank*.
+De opstelling die nu speelt verandert niet; met **Klaar** kijk je weer naar nu.
+Na het wisselmoment springt het scherm vanzelf terug.
 
 ### Zelf ingrijpen
 

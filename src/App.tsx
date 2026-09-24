@@ -176,6 +176,7 @@ export default function App() {
       onAlarmGezien={w.markeerAlarm}
       snelheid={stand.snelheid ?? 1}
       onSnelheid={w.zetSnelheid}
+      onVoegToe={w.voegSpeelsterToe}
       onOverzicht={() => zetToonOverzicht(true)}
       onVoorbereiding={w.naarVoorbereiding}
       onOpnieuw={() => {

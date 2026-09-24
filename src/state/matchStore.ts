@@ -338,6 +338,37 @@ export function useWedstrijd() {
     [],
   )
 
+  /**
+   * Legt vast wat er tot nu toe gespeeld is, als de wedstrijd al loopt.
+   *
+   * Nodig voor alles wat de aanwezigheid verandert terwijl er al gespeeld is:
+   * komt er een invalster bij of gaat er iemand naar huis, dan rekent het
+   * rooster opnieuw -- en zonder dit ook de blokken die al achter de rug zijn.
+   * Dan zou de speeltijd ineens iets anders zeggen dan wat er op het veld
+   * gebeurd is.
+   *
+   * Het blok dat nu loopt gaat mee. Een invalster heeft nul minuten en zou het
+   * rooster haar dus meteen het veld in sturen -- midden in een blok, met een
+   * andere speelster die zonder belletje of wisselkaart zou moeten vertrekken.
+   * Zo komt ze erin bij de volgende wissel, zoals iedereen. Wil de coach haar
+   * meteen erin, dan tikt hij haar op het veld.
+   */
+  const bevriesGespeeld = useCallback(
+    (huidig: WedstrijdStand): Partial<WedstrijdStand> => {
+      const verstreken = verstrekenSeconden(huidig, Date.now())
+      if (huidig.kwart === 1 && verstreken === 0) return {}
+      const nu = blokIndex(
+        huidig.kwart,
+        blokInKwart(verstreken, huidig.blokkenPerKwart),
+        huidig.blokkenPerKwart,
+      )
+      const tot = Math.min(aantalBlokken(huidig.blokkenPerKwart), nu + 1)
+      if (tot <= huidig.bevrorenTot) return {}
+      return bevries(tot, rooster.blokken)
+    },
+    [bevries, rooster.blokken],
+  )
+
   const start = useCallback(() => {
     zetStand((huidig) => (huidig.loopt ? huidig : { ...huidig, loopt: true, gestartOp: Date.now() }))
   }, [])
@@ -504,11 +535,12 @@ export function useWedstrijd() {
       }
       return {
         ...huidig,
+        ...bevriesGespeeld(huidig),
         selectie: [...huidig.selectie, speelster],
         aanwezig: [...huidig.aanwezig, speelster.id],
       }
     })
-  }, [])
+  }, [bevriesGespeeld])
 
   /** Haalt een zelf toegevoegde speelster weer weg; de vaste selectie blijft. */
   const verwijderSpeelster = useCallback((id: string) => {
@@ -614,12 +646,15 @@ export function useWedstrijd() {
   const naarVoorbereiding = useCallback(() => {
     zetStand((huidig) => ({
       ...huidig,
+      // Op de voorbereidingsschermen kan de aanwezigheid nog veranderen; wat al
+      // gespeeld is mag daar niet door omvallen.
+      ...bevriesGespeeld(huidig),
       fase: 'aanwezigheid',
       loopt: false,
       secondenInKwart: verstrekenSeconden(huidig, Date.now()),
       gestartOp: null,
     }))
-  }, [])
+  }, [bevriesGespeeld])
 
   /**
    * Wist de wedstrijd, maar niet de selectie.
