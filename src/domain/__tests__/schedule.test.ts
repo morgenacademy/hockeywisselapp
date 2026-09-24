@@ -916,8 +916,9 @@ describe('samenspel: speelsters die om dezelfde plek concurreren', () => {
     // Beiden kunnen op het centrale middenveld, maar er is één plek. Zonder
     // ingrijpen ontwijken hun rustbeurten elkaar en staan ze maar vier van de
     // twaalf blokken samen -- het rekenkundige minimum bij 8 + 8 blokken.
+    // Gemeten met de zestien voor wie dit is geschreven; zie de 8 + 8 hierboven.
     const r = maakRooster({
-      aanwezigen: SELECTIE,
+      aanwezigen: SELECTIE.slice(0, 16),
       keeperId: 'p16',
       sterkteAchter,
       sterkteMidden,

@@ -16,25 +16,48 @@ interface Props {
  * ("X eruit", "Y schuift", "Z erin") laten de leider zelf uitzoeken hoe ze
  * samenhangen -- en dan loopt de verkeerde speelster het veld af.
  */
-export function Wisselketen({ keten, naam }: { keten: WisselKeten; naam: (id: string) => string }) {
+export function Wisselketen({
+  keten, naam, onKies,
+}: {
+  keten: WisselKeten
+  naam: (id: string) => string
+  /** Maakt de wissel aan te tikken, om hem aan te passen. */
+  onKies?: () => void
+}) {
   const eenvoudig = keten.stappen.length === 1
   const laatste = keten.stappen[keten.stappen.length - 1]
+  const klik = onKies
+    ? {
+        role: 'button',
+        tabIndex: 0,
+        onClick: onKies,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onKies()
+          }
+        },
+        'aria-label': `Wissel aanpassen: ${naam(laatste.speelsterId)} voor ${naam(keten.eruit)}`,
+      }
+    : {}
+  const wijzig = onKies && <span className="keten-wijzig" aria-hidden>Wijzig ›</span>
 
   if (eenvoudig) {
     return (
-      <li className="keten enkel">
+      <li className={`keten enkel ${onKies ? 'klikbaar' : ''}`} {...klik}>
         <span className="paar-regel">
           <strong className="erin">{naam(laatste.speelsterId)}</strong>
           <span className="voor">komt erin voor</span>
           <strong className="eruit">{naam(keten.eruit)}</strong>
         </span>
         <span className="plek">{positieInfo(keten.vanPositie).naam}</span>
+        {wijzig}
       </li>
     )
   }
 
   return (
-    <li className="keten meervoudig">
+    <li className={`keten meervoudig ${onKies ? 'klikbaar' : ''}`} {...klik}>
       <div className="stap">
         <span className="rol eruit">Eruit</span>
         <span className="wie eruit">{naam(keten.eruit)}</span>
@@ -53,6 +76,7 @@ export function Wisselketen({ keten, naam }: { keten: WisselKeten; naam: (id: st
           </span>
         </div>
       ))}
+      {wijzig}
     </li>
   )
 }

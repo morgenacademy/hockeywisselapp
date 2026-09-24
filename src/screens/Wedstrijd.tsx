@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Clock } from '../components/Clock'
 import { Field, type VeldSpeler } from '../components/Field'
 import { Ruilpaneel } from '../components/Ruilpaneel'
@@ -12,7 +12,7 @@ import {
 } from '../domain/clock'
 import { LINIE_NAAM, POSITIE_CODES, positieInfo, type Positie } from '../domain/formation'
 import { inLinie, korteNaam, magOpPositie, type Speelster } from '../domain/players'
-import { wisselKetens, wisselOverzicht, type Rooster } from '../domain/schedule'
+import { wisselKetens, wisselOverzicht, type Rooster, type WisselKeten } from '../domain/schedule'
 import { OEFENMODUS, SNELHEDEN } from '../oefenmodus'
 import { useAlarm } from '../hooks/useAlarm'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -80,8 +80,13 @@ export function Wedstrijd(props: Props) {
   const { kijkBlok, onKijkBlok } = props
 
   // Een ander wisselmoment bekijken sluit het ruilpaneel: dat hoorde bij een
-  // plek in een andere opstelling.
-  useEffect(() => zetGekozenPositie(null), [kijkBlok, huidigBlok])
+  // plek in een andere opstelling. Behalve als je net op een wissel tikte:
+  // dan gaat het paneel meteen open op de plek waar die wissel over ging.
+  const straksKiezen = useRef<Positie | null>(null)
+  useEffect(() => {
+    zetGekozenPositie(straksKiezen.current)
+    straksKiezen.current = null
+  }, [kijkBlok, huidigBlok])
 
   const perId = useMemo(() => new Map(aanwezigen.map((s) => [s.id, s])), [aanwezigen])
   const naam = (id: string) => perId.get(id)?.naam ?? '?'
@@ -178,7 +183,19 @@ export function Wedstrijd(props: Props) {
     })
   }, [blok, vorigBlok, komende, perId, aanwezigen, kijktVooruit])
 
-  const bank = blok?.bank ?? []
+  // Wie niet in het veld staat zit op de bank -- afgeleid uit wie er is, niet
+  // alleen uit het blok. Een invalster die midden in een blok binnenkomt staat
+  // namelijk nog niet in dat (vastgelegde) blok, en zou anders nergens te zien
+  // zijn tot de volgende wissel.
+  const bank = useMemo(() => {
+    if (!blok) return []
+    const opVeld = new Set(Object.values(blok.opstelling))
+    const beschikbaar = aanwezigen
+      .filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))
+      .map((s) => s.id)
+    const inBlok = blok.bank.filter((id) => beschikbaar.includes(id))
+    return [...inBlok, ...beschikbaar.filter((id) => !opVeld.has(id) && !inBlok.includes(id))]
+  }, [blok, aanwezigen, keeperId, uitgevallen])
   const blokWaarschuwingen = blok?.waarschuwingen ?? []
 
   const zetSpeelster = (id: string) => {
@@ -289,6 +306,61 @@ export function Wedstrijd(props: Props) {
         </div>
       )}
 
+      {/* De wissels staan bovenaan, in een eigen kleur: dat is waar je tijdens
+          een kwart naar kijkt. Elke wissel is aan te tikken -- dan zie je de
+          opstelling na die wissel en kies je wie er op die plek komt. */}
+      {kijktVooruit && (
+        <section className="wisselpaneel">
+          <h2 className="wisselpaneel-kop">Zo gaat deze wissel</h2>
+          {ketens.length === 0 ? (
+            <p className="tel">Geen wissels: iedereen blijft staan.</p>
+          ) : (
+            <ul className="ketens">
+              {ketens.map((keten) => (
+                <Wisselketen
+                  key={keten.eruit}
+                  keten={keten}
+                  naam={naam}
+                  onKies={() => zetGekozenPositie(plekVanErin(keten))}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {!kijktVooruit && komendeKetens.length > 0 && (
+        <section className={`wisselpaneel ${komendeIsRust ? 'rust' : ''}`}>
+          <h2 className="wisselpaneel-kop">
+            {komendeIsRust ? 'Rustwissel — na dit kwart' : 'Volgende wissel'}
+          </h2>
+          <p className="tel">
+            {komendeIsRust ? 'De klok staat dan stil. ' : ''}Tik op een wissel om hem aan te passen.
+          </p>
+          <ul className="ketens">
+            {komendeKetens.map((keten) => (
+              <Wisselketen
+                key={keten.eruit}
+                keten={keten}
+                naam={naam}
+                onKies={() => {
+                  straksKiezen.current = plekVanErin(keten)
+                  onKijkBlok(bewerkBlok + 1)
+                }}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* De vooropstelling: alle wisselmomenten die nog komen, één voor één.
+          Ook vóór de aftrap, zodat je het hele plan kunt doorlopen. */}
+      {!kijktVooruit && rooster.blokken[bewerkBlok + 1] !== undefined && (
+        <button className="knop klein" onClick={() => onKijkBlok(bewerkBlok + 1)}>
+          Alle wisselmomenten bekijken
+        </button>
+      )}
+
       <Field
         spelers={spelers}
         keeperNaam={keeperId ? kort(keeperId) : undefined}
@@ -301,7 +373,7 @@ export function Wedstrijd(props: Props) {
           positie={gekozenPositie}
           huidigeId={gekozenSpeelster ?? null}
           kandidaten={aanwezigen.filter((s) => s.id !== keeperId && !uitgevallen.includes(s.id))}
-          bank={blok?.bank ?? []}
+          bank={bank}
           onKies={zetSpeelster}
           onLeeg={() => {
             onZetOpPositie(bewerkBlok, gekozenPositie, null)
@@ -321,50 +393,6 @@ export function Wedstrijd(props: Props) {
             Laat de app dit blok bepalen
           </button>
         </p>
-      )}
-
-      {kijktVooruit && (
-        <section className="vooruitblik">
-          <h2>Zo gaat deze wissel</h2>
-          {ketens.length === 0 ? (
-            <p className="tel">Geen wissels: iedereen blijft staan.</p>
-          ) : (
-            <ul className="ketens">
-              {ketens.map((keten) => (
-                <Wisselketen key={keten.eruit} keten={keten} naam={naam} />
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {!kijktVooruit && komendeKetens.length > 0 && (
-        <section className={`vooruitblik ${komendeIsRust ? 'rust' : ''}`}>
-          <h2>{komendeIsRust ? 'Rustwissel — na dit kwart' : 'Volgende wissel'}</h2>
-          {komendeIsRust && (
-            <p className="tel">
-              De klok staat dan stil. Je kunt dit rustig doen tijdens de pauze.
-            </p>
-          )}
-          <ul className="ketens">
-            {komendeKetens.map((keten) => (
-              <Wisselketen key={keten.eruit} keten={keten} naam={naam} />
-            ))}
-          </ul>
-          {/* Het voorstel is een voorstel. Wil je iemand anders erin, of moet
-              een ander eruit, dan pas je hier de opstelling na de wissel aan. */}
-          <button className="knop klein" onClick={() => onKijkBlok(bewerkBlok + 1)}>
-            Wissel aanpassen
-          </button>
-        </section>
-      )}
-
-      {/* De vooropstelling: alle wisselmomenten die nog komen, één voor één.
-          Ook vóór de aftrap, zodat je het hele plan kunt doorlopen. */}
-      {!kijktVooruit && rooster.blokken[bewerkBlok + 1] !== undefined && (
-        <button className="knop klein" onClick={() => onKijkBlok(bewerkBlok + 1)}>
-          Alle wisselmomenten bekijken
-        </button>
       )}
 
       <section className="bank">
@@ -489,4 +517,9 @@ function momentOmschrijving(blok: number, blokkenPerKwart: number): string {
   if (blok % blokkenPerKwart === 0) return `Rustwissel, begin kwart ${kwart}`
   const na = (blok % blokkenPerKwart) * blokSeconden(blokkenPerKwart)
   return `Kwart ${kwart}, na ${formatTijd(na)}`
+}
+
+/** De plek waar de speelster van de bank terechtkomt: daar kies je iemand anders. */
+function plekVanErin(keten: WisselKeten): Positie {
+  return keten.stappen[keten.stappen.length - 1]?.naar ?? keten.vanPositie
 }

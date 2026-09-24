@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SELECTIE } from '../../domain/players'
-import { selectieIsGeldig } from '../matchStore'
+import { metNieuweVaste, selectieIsGeldig, standaardStand } from '../matchStore'
 
 /**
  * De opgeslagen wedstrijd mag de app nooit kunnen platleggen.
@@ -45,5 +45,43 @@ describe('een opgeslagen selectie inlezen', () => {
         expect(speelster.linies, `${speelster.naam} centraal in ${linie}`).toContain(linie)
       }
     }
+  })
+})
+
+/**
+ * De opgeslagen selectie wint van de vaste -- anders gaan de linies en
+ * centraal-vlaggen van de coach verloren. Maar een speelster die later aan het
+ * team is toegevoegd moet dan toch verschijnen.
+ */
+describe('een nieuwe speelster in de vaste selectie', () => {
+  const nieuwste = SELECTIE[SELECTIE.length - 1]
+  const oud = SELECTIE.slice(0, -1)
+  const invalster = { id: 'extra-x', naam: 'Invalster', linies: ['M' as const], centraal: [] }
+
+  it('komt erbij in een opgeslagen selectie van vóór haar komst, en is aanwezig', () => {
+    const stand = {
+      ...standaardStand(),
+      selectie: [...oud, invalster],
+      aanwezig: [...oud, invalster].map((s) => s.id),
+    }
+    const uit = metNieuweVaste(stand)
+    expect(uit.selectie.map((s) => s.id)).toEqual([...SELECTIE.map((s) => s.id), 'extra-x'])
+    expect(uit.aanwezig).toContain(nieuwste.id)
+  })
+
+  it('laat de aanpassingen van de coach staan', () => {
+    const aangepast = oud.map((s) => (s.id === 'p07' ? { ...s, linies: ['A' as const, 'M' as const] } : s))
+    const uit = metNieuweVaste({ ...standaardStand(), selectie: aangepast })
+    expect(uit.selectie.find((s) => s.id === 'p07')?.linies).toEqual(['A', 'M'])
+  })
+
+  it('zet haar niet stilletjes aanwezig in een lopende wedstrijd', () => {
+    const stand = { ...standaardStand(), selectie: oud, aanwezig: oud.map((s) => s.id), kwart: 2 }
+    expect(metNieuweVaste(stand).aanwezig).not.toContain(nieuwste.id)
+  })
+
+  it('doet niets als de selectie al compleet is', () => {
+    const stand = standaardStand()
+    expect(metNieuweVaste(stand)).toBe(stand)
   })
 })

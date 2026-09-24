@@ -34,6 +34,7 @@ export const SELECTIE: Speelster[] = [
   { id: 'p14', naam: 'Romy Vincenten',     linies: ['M', 'A'],      centraal: [] },
   { id: 'p15', naam: 'Lynn Visschers',     linies: ['V', 'M', 'A'], centraal: ['V', 'M'] },
   { id: 'p16', naam: 'Eva van der Zee',    linies: ['V', 'A'],      centraal: [] },
+  { id: 'p17', naam: 'Livia de Jong',      linies: ['V', 'M', 'A'], centraal: [] },
 ]
 
 /** Roepnaam voor op het veld: voornaam, met achternaam-initiaal als die dubbel is. */

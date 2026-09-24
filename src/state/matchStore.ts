@@ -148,7 +148,36 @@ export function selectieIsGeldig(selectie: unknown): boolean {
   )
 }
 
+/**
+ * Zet speelsters die later aan de vaste selectie zijn toegevoegd erbij.
+ *
+ * De opgeslagen selectie wint van `SELECTIE`, want daarin staan de linies en
+ * centraal-vlaggen die de coach heeft bijgesteld. Maar komt er een nieuwe
+ * speelster in het team, dan zou zij zo nooit verschijnen bij wie de app al
+ * eens gebruikt heeft. Wie ontbreekt komt er dus achteraan bij, en is ook
+ * aanwezig -- tenzij er al een wedstrijd loopt: daar zet je haar zelf aan.
+ */
+export function metNieuweVaste(stand: WedstrijdStand): WedstrijdStand {
+  const bekend = new Set(stand.selectie.map((s) => s.id))
+  const nieuw = SELECTIE.filter((s) => !bekend.has(s.id))
+  if (nieuw.length === 0) return stand
+  const gestart = stand.kwart > 1 || stand.secondenInKwart > 0
+  // Invalsters blijven achteraan, na de vaste selectie.
+  const vast = stand.selectie.filter((s) => isVasteSpeelster(s.id))
+  const extra = stand.selectie.filter((s) => !isVasteSpeelster(s.id))
+  return {
+    ...stand,
+    selectie: [...vast, ...nieuw, ...extra],
+    aanwezig: gestart ? stand.aanwezig : [...stand.aanwezig, ...nieuw.map((s) => s.id)],
+  }
+}
+
 function lees(): WedstrijdStand {
+  const stand = leesOpslag()
+  return metNieuweVaste(stand)
+}
+
+function leesOpslag(): WedstrijdStand {
   try {
     const ruw = localStorage.getItem(OPSLAG_SLEUTEL)
     if (!ruw) return standaardStand()

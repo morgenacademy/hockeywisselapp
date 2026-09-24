@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { positieInfo, type Positie } from '../domain/formation'
 import { inLinie, magOpPositie, type Speelster } from '../domain/players'
 
@@ -33,13 +34,19 @@ export function Ruilpaneel({
   positie, huidigeId, kandidaten, bank = [], onKies, onLeeg, onAnnuleer,
 }: Props) {
   const info = positieInfo(positie)
+  // Het paneel kan onder het veld buiten beeld openen, bijvoorbeeld na een tik
+  // op een wissel bovenaan. Dan schuift het in beeld.
+  const paneel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    paneel.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+  }, [positie])
   const naamVan = (id: string) => kandidaten.find((s) => s.id === id)?.naam ?? '?'
 
   /** 0 = eigen linie, 1 = buiten haar linie, 2 = kan hier normaal niet centraal staan. */
   const rang = (s: Speelster) => (!magOpPositie(s, positie) ? 2 : inLinie(s, positie) ? 0 : 1)
 
   return (
-    <div className="ruilpaneel">
+    <div className="ruilpaneel" ref={paneel}>
       <p>
         <strong>{info.naam}</strong>
         {huidigeId ? ` — nu ${naamVan(huidigeId)}` : ' — leeg'}

@@ -749,3 +749,44 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .blokknop:focus-visible { outline: 2px solid var(--accent); }
 .vooruitblik > .knop { align-self: flex-start; }
+
+/* --- wisselpaneel ---
+   Bovenaan het wedstrijdscherm, met een vol geel kopvlak zoals de wisselkaart:
+   tussen de marineblauwe vlakken is dit het ene ding dat eruit springt. Bij een
+   rustwissel is het vlak groen. */
+.wisselpaneel {
+  background: var(--paneel);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.wisselpaneel-kop {
+  margin: 0 -12px;
+  padding: 10px 12px;
+  background: var(--accent);
+  color: var(--op-accent);
+  font-size: 1.05rem;
+}
+.wisselpaneel.rust { border-color: var(--erin); }
+.wisselpaneel.rust .wisselpaneel-kop { background: var(--erin); color: #052e16; }
+.wisselpaneel .tel { margin: 0; }
+
+.keten.klikbaar { cursor: pointer; position: relative; padding-right: 76px; }
+.keten.klikbaar:hover, .keten.klikbaar:focus-visible { background: var(--rand); outline: none; }
+.keten.klikbaar:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.keten-wijzig {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--accent);
+  color: var(--op-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 9px;
+  border-radius: 999px;
+}
